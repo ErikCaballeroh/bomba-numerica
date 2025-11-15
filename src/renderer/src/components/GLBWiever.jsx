@@ -1,19 +1,30 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
-const ElectronGLBViewer = () => {
+export const GLBViewer = () => {
     const mountRef = useRef(null);
     const modelRef = useRef(null);
+    const containerRef = useRef(null); // ⭐ NUEVO: Contenedor para rotación
     const sceneRef = useRef(null);
     const rendererRef = useRef(null);
     const [modelPath, setModelPath] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // ⭐⭐ CORRECCIÓN: Sistema de rotación con contenedor
     const isDragging = useRef(false);
     const previousMousePosition = useRef({ x: 0, y: 0 });
-    const rotation = useRef({ x: 0, y: 0 });
+
+    // ⭐⭐ NUEVO: Función para reiniciar rotación
+    const resetRotation = () => {
+        if (containerRef.current) {
+            containerRef.current.rotation.x = 0;
+            containerRef.current.rotation.y = 0;
+            containerRef.current.rotation.z = 0;
+            console.log('🔄 Rotación reiniciada');
+        }
+    };
 
     // Cargar modelo usando la API de Electron
     const loadModel = async () => {
@@ -104,6 +115,10 @@ const ElectronGLBViewer = () => {
                 directionalLight2.position.set(-5, -5, 5);
                 scene.add(directionalLight2);
 
+                // ❌ ELIMINADO: Grid helper (líneas blancas)
+                // const gridHelper = new THREE.GridHelper(10, 10);
+                // scene.add(gridHelper);
+
                 // Cargar el modelo desde el blob URL
                 const loader = new GLTFLoader();
 
@@ -113,30 +128,53 @@ const ElectronGLBViewer = () => {
                         console.log('✅ Modelo GLB procesado por Three.js');
 
                         // Remover modelo anterior si existe
-                        if (modelRef.current) {
-                            scene.remove(modelRef.current);
+                        if (containerRef.current) {
+                            scene.remove(containerRef.current);
                         }
 
                         const model = gltf.scene;
-                        scene.add(model);
-                        modelRef.current = model;
 
-                        // Ajustar escala y posición
+                        // ⭐⭐ SOLUCIÓN: Crear un contenedor para el modelo
+                        const container = new THREE.Group();
+                        scene.add(container);
+                        container.add(model);
+
+                        containerRef.current = container; // Referencia al contenedor
+                        modelRef.current = model; // Referencia al modelo (para centrado)
+
+                        // 🎯 CORRECCIÓN: Rotar el modelo 90 grados en X para que empiece de pie
+                        model.rotation.x = Math.PI / 2; // 90 grados en radianes
+
+                        // Calcular el bounding box del modelo (después de la rotación)
                         const box = new THREE.Box3().setFromObject(model);
-                        const size = box.getSize(new THREE.Vector3());
+                        const center = new THREE.Vector3();
+                        const size = new THREE.Vector3();
+
+                        box.getCenter(center);
+                        box.getSize(size);
+
+                        console.log('📐 Centro geométrico del modelo:', center);
+                        console.log('📏 Dimensiones del modelo:', size);
+
+                        // Escalar el modelo proporcionalmente
                         const maxDim = Math.max(size.x, size.y, size.z);
                         const scale = 6 / maxDim;
-
                         model.scale.setScalar(scale);
 
-                        // Centrar el modelo
-                        const center = box.getCenter(new THREE.Vector3());
+                        // ⭐⭐ CORRECCIÓN: Centrar el modelo DENTRO del contenedor
                         model.position.x = -center.x * scale;
                         model.position.y = -center.y * scale;
                         model.position.z = -center.z * scale;
 
+                        // ❌ ELIMINADO: Axes helper (líneas de ejes)
+                        // const axesHelper = new THREE.AxesHelper(3);
+                        // scene.add(axesHelper);
+
+                        console.log('🎯 Modelo centrado correctamente en el contenedor');
+                        console.log('🔄 Modelo rotado -90° en X para posición vertical');
+
                         setLoading(false);
-                        console.log('✅ Modelo configurado y listo para rotar');
+                        console.log('✅ Modelo listo - rotación intuitiva habilitada');
                     },
 
                     (progress) => {
@@ -152,18 +190,40 @@ const ElectronGLBViewer = () => {
                 );
 
                 const createFallbackModel = () => {
-                    const geometry = new THREE.SphereGeometry(2, 32, 32);
+                    // Crear contenedor para el modelo de fallback también
+                    const container = new THREE.Group();
+                    scene.add(container);
+                    containerRef.current = container;
+
+                    const geometry = new THREE.BoxGeometry(2, 3, 1);
                     const material = new THREE.MeshStandardMaterial({
                         color: 0x3498db,
                         roughness: 0.3,
                         metalness: 0.7
                     });
-                    const sphere = new THREE.Mesh(geometry, material);
-                    scene.add(sphere);
-                    modelRef.current = sphere;
+                    const box = new THREE.Mesh(geometry, material);
+
+                    // 🎯 CORRECCIÓN: Rotar también el modelo de fallback
+                    box.rotation.x = -Math.PI / 2; // -90 grados en radianes
+
+                    // Centrar el modelo dentro del contenedor
+                    const boxHelper = new THREE.Box3().setFromObject(box);
+                    const center = new THREE.Vector3();
+                    boxHelper.getCenter(center);
+
+                    box.position.x = -center.x;
+                    box.position.y = -center.y;
+                    box.position.z = -center.z;
+
+                    container.add(box);
+                    modelRef.current = box;
+
+                    // ❌ ELIMINADO: Axes helper para fallback también
+                    // const axesHelper = new THREE.AxesHelper(3);
+                    // scene.add(axesHelper);
                 };
 
-                // Event handlers para rotación
+                // ⭐⭐ CORRECCIÓN: Sistema de rotación con Quaternions
                 const handleMouseDown = (event) => {
                     if (event.button === 0) {
                         isDragging.current = true;
@@ -177,16 +237,15 @@ const ElectronGLBViewer = () => {
                 };
 
                 const handleMouseMove = (event) => {
-                    if (!isDragging.current || !modelRef.current) return;
+                    if (!isDragging.current || !containerRef.current) return;
 
                     const deltaX = event.clientX - previousMousePosition.current.x;
                     const deltaY = event.clientY - previousMousePosition.current.y;
 
-                    rotation.current.y += deltaX * 0.008;
-                    rotation.current.x += deltaY * 0.008;
-
-                    // Limitar rotación vertical
-                    rotation.current.x = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, rotation.current.x));
+                    // ⭐⭐ SOLUCIÓN: Rotación basada en el sistema global, no local
+                    // Esto hace que los movimientos sean siempre intuitivos
+                    containerRef.current.rotation.y += deltaX * 0.01; // Izquierda/derecha siempre gira alrededor del eje Y global
+                    containerRef.current.rotation.x += deltaY * 0.01; // Arriba/abajo siempre gira alrededor del eje X global
 
                     previousMousePosition.current = {
                         x: event.clientX,
@@ -228,13 +287,6 @@ const ElectronGLBViewer = () => {
                 // Animation loop
                 const animate = () => {
                     requestAnimationFrame(animate);
-
-                    if (modelRef.current) {
-                        // Aplicar rotación suavemente
-                        modelRef.current.rotation.x += (rotation.current.x - modelRef.current.rotation.x) * 0.1;
-                        modelRef.current.rotation.y += (rotation.current.y - modelRef.current.rotation.y) * 0.1;
-                    }
-
                     renderer.render(scene, camera);
                 };
 
@@ -268,9 +320,9 @@ const ElectronGLBViewer = () => {
                     // Dispose de recursos
                     renderer.dispose();
 
-                    if (modelRef.current) {
-                        scene.remove(modelRef.current);
-                        modelRef.current.traverse((child) => {
+                    if (containerRef.current) {
+                        scene.remove(containerRef.current);
+                        containerRef.current.traverse((child) => {
                             if (child.isMesh) {
                                 child.geometry.dispose();
                                 if (Array.isArray(child.material)) {
@@ -293,7 +345,7 @@ const ElectronGLBViewer = () => {
         const cleanup = initThreeJS();
 
         return cleanup;
-    }, [modelPath]); // Este efecto se ejecuta cuando modelPath cambia
+    }, [modelPath]);
 
     return (
         <div style={{ width: '100vw', height: '100vh', position: 'relative' }}>
@@ -360,25 +412,43 @@ const ElectronGLBViewer = () => {
                 </div>
             )}
 
-            {/* Instrucciones cuando el modelo está cargado */}
+            {/* ❌ ELIMINADO: Instrucciones de rotación */}
+            {/* ✅ NUEVO: Botón para reiniciar rotación */}
             {!loading && !error && (
                 <div style={{
                     position: 'absolute',
                     bottom: '20px',
                     left: '20px',
-                    color: 'white',
-                    backgroundColor: 'rgba(0,0,0,0.7)',
-                    padding: '10px 15px',
-                    borderRadius: '5px',
-                    fontFamily: 'Arial, sans-serif',
-                    fontSize: '14px',
                     zIndex: 1000
                 }}>
-                    💡 Haz clic y arrastra para rotar el modelo
+                    <button
+                        onClick={resetRotation}
+                        style={{
+                            padding: '10px 16px',
+                            backgroundColor: 'rgba(52, 152, 219, 0.9)',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontFamily: 'Arial, sans-serif',
+                            fontSize: '14px',
+                            fontWeight: 'bold',
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                            transition: 'all 0.2s ease'
+                        }}
+                        onMouseOver={(e) => {
+                            e.target.style.backgroundColor = 'rgba(41, 128, 185, 0.9)';
+                            e.target.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseOut={(e) => {
+                            e.target.style.backgroundColor = 'rgba(52, 152, 219, 0.9)';
+                            e.target.style.transform = 'scale(1)';
+                        }}
+                    >
+                        🔄 Reiniciar Rotación
+                    </button>
                 </div>
             )}
         </div>
     );
 };
-
-export default ElectronGLBViewer;
