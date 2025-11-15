@@ -1,4 +1,7 @@
 import Model3D from './components/Model3D'
+import RotatingCube from './components/RotatingCube'
+import SimpleModelViewer from './components/ElectronGLBWiever'
+import ElectronGLBViewer from './components/ElectronGLBWiever'
 
 function App() {
   return (
@@ -13,7 +16,9 @@ function App() {
       }}>
         Mi Modelo 3D
       </h1>
-      <Model3D />
+      {/* <Model3D /> */}
+      {/* <RotatingCube /> */}
+      <ElectronGLBViewer />
     </div>
   )
 }
