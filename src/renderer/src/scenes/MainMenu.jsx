@@ -1,6 +1,7 @@
 import { Button } from '../components/ui/Button';
 import { motion } from 'framer-motion';
 import { Background3D } from '../components/Background3D';
+import { useNavigation } from '../hooks/useNavigation';
 
 const heartbeatVariants = {
     animate: {
@@ -14,6 +15,8 @@ const heartbeatVariants = {
 };
 
 export default function MainMenu() {
+    const { goGame } = useNavigation();
+
     return (
         <div className="relative min-h-screen w-screen overflow-hidden">
             {/* Fondo 3D */}
@@ -32,8 +35,7 @@ export default function MainMenu() {
 
                 {/* Contenedor principal */}
                 <div className="w-full max-w-lg bg-neutral-900/80 backdrop-blur-sm border border-neutral-600 rounded-xl p-10 shadow-2xl flex flex-col gap-10 mx-4">
-                    <Button>Jugar</Button>
-                    <Button>Niveles</Button>
+                    <Button onClick={() => goGame(1)}>Jugar</Button>
                     <Button>Ajustes</Button>
                 </div>
             </div>

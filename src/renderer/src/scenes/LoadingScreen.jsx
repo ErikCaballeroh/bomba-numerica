@@ -1,8 +1,13 @@
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import ImagenBomba from '../assets/images/bomba.png'
+import { useNavigation } from '../hooks/useNavigation';
+
+
 
 export const LoadingScreen = () => {
+    const { goHome } = useNavigation();
+
     const [animationStarted, setAnimationStarted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(2);
 
@@ -10,20 +15,13 @@ export const LoadingScreen = () => {
         // Iniciar animación después de que el componente se monte
         setAnimationStarted(true);
 
-        const timer = setInterval(() => {
-            setTimeLeft(prev => {
-                if (prev <= 1) {
-                    clearInterval(timer);
-                    // Aquí puedes agregar lo que pasa cuando termina el tiempo
-                    console.log("¡Tiempo agotado!");
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
+        // Redirigir al home cuando termina la animación (delay 1.5s + duration 2s = 3.5s)
+        const redirectTimer = setTimeout(() => {
+            goHome();
+        }, 3500);
 
-        return () => clearInterval(timer);
-    }, []);
+        return () => clearTimeout(redirectTimer);
+    }, [goHome]);
 
     return (
         <div className="h-screen w-screen bg-black flex flex-col items-center justify-center p-4 animate-fade-in animate-duration-1000 animate-delay-500">
