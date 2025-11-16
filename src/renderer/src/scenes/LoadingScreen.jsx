@@ -26,7 +26,7 @@ export const LoadingScreen = () => {
     return (
         <div className="h-screen w-screen bg-black flex flex-col items-center justify-center p-4 animate-fade-in animate-duration-1000 animate-delay-500">
             <div className="flex-1 flex flex-col justify-center">
-                <h2 className="text-center text-white text-7xl font-light pb-20">FimeGames</h2>
+                <h2 className="text-center text-white text-7xl font-light pb-20">Equipo8</h2>
                 <h1 className="text-center text-orange-400 text-9xl font-extrabold pb-30">Bomba Numerica</h1>
             </div>
             <div className="w-full h-[100px] p-10 relative">
