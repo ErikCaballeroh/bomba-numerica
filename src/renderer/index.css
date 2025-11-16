@@ -1,2 +1,14 @@
 @import 'tailwindcss';
-@plugin "@midudev/tailwind-animations";
+@plugin '@midudev/tailwind-animations';
+
+body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background: #000000 !important;
+}

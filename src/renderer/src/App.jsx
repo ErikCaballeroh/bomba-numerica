@@ -1,14 +1,11 @@
-import { GLBViewer } from "./components/GLBWiever"
-import { MainMenu } from "./components/ui/MainMenu"
+import { GLBViewer } from './components/GLBWiever'
+import { LoadingScreen } from './scenes/LoadingScreen'
+import { MainMenu } from './scenes/MainMenu'
 
 function App() {
     return (
         <>
-            {/* <div className="w-screen h-screen">
-                <h1 className="absolute top-2.5 left-2.5 z-10 text-white drop-shadow-lg">
-                    Modelo 3D
-                </h1>
-            </div> */}
+            {/* <LoadingScreen /> */}
             <MainMenu />
         </>
 
