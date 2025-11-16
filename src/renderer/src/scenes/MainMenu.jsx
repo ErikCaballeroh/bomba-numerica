@@ -1,5 +1,6 @@
 import { Button } from '../components/ui/Button';
 import { motion } from 'framer-motion';
+import { Background3D } from '../components/Background3D';
 
 const heartbeatVariants = {
     animate: {
@@ -12,23 +13,29 @@ const heartbeatVariants = {
     }
 };
 
-export const MainMenu = () => {
+export default function MainMenu() {
     return (
-        <div className="min-h-screen w-max bg-black flex flex-col items-center py-10 justify-center text-white">
-            {/* Título */}
-            <motion.h1
-                variants={heartbeatVariants}
-                animate="animate"
-                className="text-9xl font-extrabold mb-16 tracking-wider text-white h-[200px]"
-            >
-                Bomba Numerica
-            </motion.h1>
+        <div className="relative min-h-screen w-screen overflow-hidden">
+            {/* Fondo 3D */}
+            <Background3D />
 
-            {/* Contenedor principal */}
-            <div className="w-full max-w-lg bg-neutral-900 border border-neutral-600 rounded-xl p-10 shadow-2xl flex flex-col gap-10">
-                <Button>Jugar</Button>
-                <Button>Niveles</Button>
-                <Button>Ajustes</Button>
+            {/* Contenido del menú */}
+            <div className="relative z-10 min-h-screen flex flex-col items-center py-10 justify-center text-white">
+                {/* Título con animación */}
+                <motion.h1
+                    variants={heartbeatVariants}
+                    animate="animate"
+                    className="text-7xl md:text-9xl font-extrabold mb-16 tracking-wider text-white h-auto md:h-[200px]"
+                >
+                    Bomba Numerica
+                </motion.h1>
+
+                {/* Contenedor principal */}
+                <div className="w-full max-w-lg bg-neutral-900/80 backdrop-blur-sm border border-neutral-600 rounded-xl p-10 shadow-2xl flex flex-col gap-10 mx-4">
+                    <Button>Jugar</Button>
+                    <Button>Niveles</Button>
+                    <Button>Ajustes</Button>
+                </div>
             </div>
         </div>
     );

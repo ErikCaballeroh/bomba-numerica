@@ -3,14 +3,7 @@ export const Button = ({ children, onClick }) => {
         <button
             type="button"
             onClick={onClick}
-            className={
-                `
-                    inline-flex items-center justify-center px-5 py-5 rounded-lg text-2xl font-medium text-white
-                    bg-amber-500 hover:bg-amber-600 active:scale-95 disabled:opacity-50
-                    focus:outline-none focus:ring-2 focus:ring-amber-300 transition-transform
-                    cursor-pointer
-                 `
-            }
+            className="w-full py-4 px-6 bg-linear-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 text-white font-bold text-xl rounded-lg transition-all transform hover:scale-105 shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-orange-300 cursor-pointer"
         >
             {children}
         </button>

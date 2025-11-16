@@ -2,13 +2,11 @@
 @plugin '@midudev/tailwind-animations';
 
 body {
-    margin: 0;
-    padding: 0;
     display: flex;
-    justify-content: center;
     align-items: center;
-    width: 100vw;
-    height: 100vh;
+    justify-content: center;
     overflow: hidden;
-    background: #000000 !important;
+    background: #000000;
+    background-size: cover;
+    user-select: none;
 }
