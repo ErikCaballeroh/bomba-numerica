@@ -1,20 +1,17 @@
 import { GLBViewer } from "./components/GLBWiever"
+import { MainMenu } from "./components/ui/MainMenu"
 
 function App() {
     return (
-        <div style={{ width: '100vw', height: '100vh' }}>
-            <h1 style={{
-                position: 'absolute',
-                top: 10,
-                left: 10,
-                zIndex: 1,
-                color: 'white',
-                textShadow: '2px 2px 4px rgba(0,0,0,0.8)'
-            }}>
-                Modelo 3D
-            </h1>
-            <GLBViewer />
-        </div>
+        <>
+            {/* <div className="w-screen h-screen">
+                <h1 className="absolute top-2.5 left-2.5 z-10 text-white drop-shadow-lg">
+                    Modelo 3D
+                </h1>
+            </div> */}
+            <MainMenu />
+        </>
+
     )
 }
 
