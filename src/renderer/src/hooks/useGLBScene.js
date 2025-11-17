@@ -1,0 +1,399 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
+
+const ROOM_DIMENSIONS = {
+    width: 20,
+    height: 15,
+    depth: 20,
+}
+
+const createRoomBackground = (scene) => {
+    const roomGroup = new THREE.Group()
+
+    const lineMaterial = new THREE.LineBasicMaterial({
+        color: 0xff8c42,
+        transparent: true,
+        opacity: 0.15,
+    })
+
+    const width = ROOM_DIMENSIONS.width
+    const height = ROOM_DIMENSIONS.height
+    const depth = ROOM_DIMENSIONS.depth
+
+    const floorGrid = new THREE.GridHelper(width, 20, 0xff8c42, 0xff6b1a)
+    floorGrid.position.y = -height / 2
+    floorGrid.material.transparent = true
+    floorGrid.material.opacity = 0.12
+    roomGroup.add(floorGrid)
+
+    const createWallLines = (positions, isVertical) => {
+        positions.forEach((pos) => {
+            const points = []
+            if (isVertical) {
+                points.push(new THREE.Vector3(pos.x, -height / 2, pos.z))
+                points.push(new THREE.Vector3(pos.x, height / 2, pos.z))
+            } else {
+                points.push(new THREE.Vector3(pos.x1, pos.y, pos.z))
+                points.push(new THREE.Vector3(pos.x2, pos.y, pos.z))
+            }
+            const geometry = new THREE.BufferGeometry().setFromPoints(points)
+            const line = new THREE.Line(geometry, lineMaterial)
+            roomGroup.add(line)
+        })
+    }
+
+    const backWallVertical = []
+    for (let i = -10; i <= 10; i += 2) {
+        backWallVertical.push({ x: i, z: -depth / 2 })
+    }
+    createWallLines(backWallVertical, true)
+
+    const backWallHorizontal = []
+    for (let i = -height / 2; i <= height / 2; i += 2) {
+        backWallHorizontal.push({ x1: -width / 2, x2: width / 2, y: i, z: -depth / 2 })
+    }
+    createWallLines(backWallHorizontal, false)
+
+    const leftWallVertical = []
+    const rightWallVertical = []
+    for (let i = -10; i <= 10; i += 2) {
+        leftWallVertical.push({ x: -width / 2, z: i })
+        rightWallVertical.push({ x: width / 2, z: i })
+    }
+    createWallLines(leftWallVertical, true)
+    createWallLines(rightWallVertical, true)
+
+    const framePoints = [
+        new THREE.Vector3(-width / 2, -height / 2, -depth / 2),
+        new THREE.Vector3(width / 2, -height / 2, -depth / 2),
+        new THREE.Vector3(width / 2, -height / 2, depth / 2),
+        new THREE.Vector3(-width / 2, -height / 2, depth / 2),
+        new THREE.Vector3(-width / 2, -height / 2, -depth / 2),
+        new THREE.Vector3(-width / 2, height / 2, -depth / 2),
+        new THREE.Vector3(width / 2, height / 2, -depth / 2),
+        new THREE.Vector3(width / 2, height / 2, depth / 2),
+        new THREE.Vector3(-width / 2, height / 2, depth / 2),
+        new THREE.Vector3(-width / 2, height / 2, -depth / 2),
+    ]
+
+    const frameGeometry = new THREE.BufferGeometry().setFromPoints(framePoints)
+    const frameLine = new THREE.Line(
+        frameGeometry,
+        new THREE.LineBasicMaterial({ color: 0xff8c42, transparent: true, opacity: 0.3 })
+    )
+    roomGroup.add(frameLine)
+
+    const corners = [
+        [
+            new THREE.Vector3(width / 2, -height / 2, -depth / 2),
+            new THREE.Vector3(width / 2, height / 2, -depth / 2),
+        ],
+        [
+            new THREE.Vector3(-width / 2, -height / 2, depth / 2),
+            new THREE.Vector3(-width / 2, height / 2, depth / 2),
+        ],
+        [
+            new THREE.Vector3(width / 2, -height / 2, depth / 2),
+            new THREE.Vector3(width / 2, height / 2, depth / 2),
+        ],
+    ]
+
+    corners.forEach((corner) => {
+        const geo = new THREE.BufferGeometry().setFromPoints(corner)
+        const line = new THREE.Line(
+            geo,
+            new THREE.LineBasicMaterial({ color: 0xff8c42, transparent: true, opacity: 0.3 })
+        )
+        roomGroup.add(line)
+    })
+
+    roomGroup.position.z = -2
+    scene.add(roomGroup)
+}
+
+const disposeScene = (scene, renderer, container) => {
+    if (container) {
+        scene.remove(container)
+        container.traverse((child) => {
+            if (child.isMesh) {
+                child.geometry.dispose()
+                if (Array.isArray(child.material)) {
+                    child.material.forEach((material) => material.dispose())
+                } else if (child.material) {
+                    child.material.dispose()
+                }
+            }
+        })
+    }
+
+    renderer?.dispose()
+}
+
+export const useGLBScene = () => {
+    const mountRef = useRef(null)
+    const containerRef = useRef(null)
+    const isDragging = useRef(false)
+    const previousMousePosition = useRef({ x: 0, y: 0 })
+
+    const [modelUrl, setModelUrl] = useState(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null)
+
+    const resetRotation = useCallback(() => {
+        if (!containerRef.current) return
+        containerRef.current.rotation.x = 0
+        containerRef.current.rotation.y = 0
+        containerRef.current.rotation.z = 0
+    }, [])
+
+    const loadModel = useCallback(async () => {
+        try {
+            setLoading(true)
+            setError(null)
+
+            const result = await window.api.readModelFile('METNUM.glb')
+
+            if (!result.success) {
+                throw new Error(result.error)
+            }
+
+            const uint8Array = new Uint8Array(result.data)
+            const blob = new Blob([uint8Array], { type: 'model/gltf-binary' })
+            const blobUrl = URL.createObjectURL(blob)
+
+            setModelUrl((prevUrl) => {
+                if (prevUrl) URL.revokeObjectURL(prevUrl)
+                return blobUrl
+            })
+        } catch (err) {
+            setError(`Error: ${err.message}`)
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        loadModel()
+    }, [loadModel])
+
+    useEffect(() => {
+        if (!modelUrl) return undefined
+
+        const initThreeJS = () => {
+            const scene = new THREE.Scene()
+            scene.background = new THREE.Color(0x0a0604)
+
+            createRoomBackground(scene)
+
+            const camera = new THREE.PerspectiveCamera(
+                60,
+                window.innerWidth / window.innerHeight,
+                0.1,
+                1000
+            )
+            camera.position.z = 8
+
+            const renderer = new THREE.WebGLRenderer({
+                antialias: true,
+                alpha: false,
+                preserveDrawingBuffer: false,
+                powerPreference: 'high-performance',
+            })
+
+            renderer.setSize(window.innerWidth, window.innerHeight)
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+            if (mountRef.current) {
+                while (mountRef.current.firstChild) {
+                    mountRef.current.removeChild(mountRef.current.firstChild)
+                }
+                mountRef.current.appendChild(renderer.domElement)
+            }
+
+            const canvas = renderer.domElement
+            canvas.style.display = 'block'
+            canvas.style.width = '100%'
+            canvas.style.height = '100%'
+            canvas.style.position = 'fixed'
+            canvas.style.top = '0'
+            canvas.style.left = '0'
+
+            const ambientLight = new THREE.AmbientLight(0x404040, 1.2)
+            scene.add(ambientLight)
+
+            const directionalLight1 = new THREE.DirectionalLight(0xffffff, 0.8)
+            directionalLight1.position.set(5, 5, 5)
+            scene.add(directionalLight1)
+
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4)
+            directionalLight2.position.set(-5, -5, 5)
+            scene.add(directionalLight2)
+
+            const loader = new GLTFLoader()
+
+            const createFallbackModel = () => {
+                const container = new THREE.Group()
+                scene.add(container)
+                containerRef.current = container
+
+                const geometry = new THREE.BoxGeometry(2, 3, 1)
+                const material = new THREE.MeshStandardMaterial({
+                    color: 0x3498db,
+                    roughness: 0.3,
+                    metalness: 0.7,
+                })
+                const box = new THREE.Mesh(geometry, material)
+                box.rotation.x = -Math.PI / 2
+
+                const boxHelper = new THREE.Box3().setFromObject(box)
+                const center = new THREE.Vector3()
+                boxHelper.getCenter(center)
+
+                box.position.x = -center.x
+                box.position.y = -center.y
+                box.position.z = -center.z
+
+                container.add(box)
+            }
+
+            loader.load(
+                modelUrl,
+                (gltf) => {
+                    if (containerRef.current) {
+                        scene.remove(containerRef.current)
+                    }
+
+                    const model = gltf.scene
+                    const container = new THREE.Group()
+                    scene.add(container)
+                    container.add(model)
+
+                    containerRef.current = container
+
+                    model.rotation.x = Math.PI / 2
+
+                    const box = new THREE.Box3().setFromObject(model)
+                    const center = new THREE.Vector3()
+                    const size = new THREE.Vector3()
+
+                    box.getCenter(center)
+                    box.getSize(size)
+
+                    const maxDim = Math.max(size.x, size.y, size.z)
+                    const scale = 6 / maxDim
+                    model.scale.setScalar(scale)
+
+                    model.position.x = -center.x * scale
+                    model.position.y = -center.y * scale
+                    model.position.z = -center.z * scale
+
+                    setLoading(false)
+                },
+                undefined,
+                (glbError) => {
+                    console.error('❌ Error procesando GLB:', glbError)
+                    setError('Error procesando el modelo 3D')
+                    setLoading(false)
+                    createFallbackModel()
+                }
+            )
+
+            const handleMouseDown = (event) => {
+                if (event.button !== 0) return
+                isDragging.current = true
+                previousMousePosition.current = { x: event.clientX, y: event.clientY }
+                canvas.style.cursor = 'grabbing'
+                event.preventDefault()
+            }
+
+            const handleMouseMove = (event) => {
+                if (!isDragging.current || !containerRef.current) return
+
+                const deltaX = event.clientX - previousMousePosition.current.x
+                const deltaY = event.clientY - previousMousePosition.current.y
+
+                containerRef.current.rotation.y += deltaX * 0.01
+                containerRef.current.rotation.x += deltaY * 0.01
+
+                previousMousePosition.current = { x: event.clientX, y: event.clientY }
+                event.preventDefault()
+            }
+
+            const handleMouseUp = (event) => {
+                if (event.button !== 0) return
+                isDragging.current = false
+                canvas.style.cursor = 'grab'
+                event.preventDefault()
+            }
+
+            const handleWheel = (event) => {
+                event.preventDefault()
+            }
+
+            const handleResize = () => {
+                camera.aspect = window.innerWidth / window.innerHeight
+                camera.updateProjectionMatrix()
+                renderer.setSize(window.innerWidth, window.innerHeight)
+            }
+
+            canvas.addEventListener('mousedown', handleMouseDown, { passive: false })
+            canvas.addEventListener('mousemove', handleMouseMove, { passive: false })
+            canvas.addEventListener('mouseup', handleMouseUp, { passive: false })
+            canvas.addEventListener('wheel', handleWheel, { passive: false })
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault())
+            window.addEventListener('resize', handleResize)
+
+            let animationId = null
+
+            const animate = () => {
+                animationId = requestAnimationFrame(animate)
+                renderer.render(scene, camera)
+            }
+
+            animate()
+
+            const cleanup = () => {
+                if (modelUrl) {
+                    URL.revokeObjectURL(modelUrl)
+                }
+
+                if (mountRef.current && renderer.domElement) {
+                    try {
+                        mountRef.current.removeChild(renderer.domElement)
+                    } catch (err) {
+                        console.log('Error removiendo canvas:', err)
+                    }
+                }
+
+                canvas.removeEventListener('mousedown', handleMouseDown)
+                canvas.removeEventListener('mousemove', handleMouseMove)
+                canvas.removeEventListener('mouseup', handleMouseUp)
+                canvas.removeEventListener('wheel', handleWheel)
+                window.removeEventListener('resize', handleResize)
+
+                cancelAnimationFrame(animationId)
+
+                disposeScene(scene, renderer, containerRef.current)
+            }
+
+            return cleanup
+        }
+
+        try {
+            return initThreeJS()
+        } catch (threeError) {
+            console.error('❌ Error inicializando Three.js:', threeError)
+            setError('Error inicializando el visor 3D')
+            setLoading(false)
+            return undefined
+        }
+    }, [modelUrl])
+
+    return {
+        mountRef,
+        loading,
+        error,
+        resetRotation,
+        retry: loadModel,
+    }
+}
