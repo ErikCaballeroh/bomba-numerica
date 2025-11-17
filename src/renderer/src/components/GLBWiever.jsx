@@ -67,8 +67,129 @@ export const GLBViewer = () => {
             try {
                 // Configuración de Three.js
                 const scene = new THREE.Scene()
-                scene.background = new THREE.Color(0x050816)
+                scene.background = new THREE.Color(0x0a0604)
                 sceneRef.current = scene
+
+                // ⭐ NUEVO: Crear fondo de habitación con líneas (wireframe)
+                const createRoomBackground = () => {
+                    const roomGroup = new THREE.Group()
+
+                    // Material para las líneas
+                    const lineMaterial = new THREE.LineBasicMaterial({
+                        color: 0xff8c42,
+                        transparent: true,
+                        opacity: 0.15
+                    })
+
+                    const gridMaterial = new THREE.LineBasicMaterial({
+                        color: 0xff6b1a,
+                        transparent: true,
+                        opacity: 0.08
+                    })
+
+                    // Dimensiones de la habitación
+                    const width = 20
+                    const height = 15
+                    const depth = 20
+
+                    // Piso con grid
+                    const floorGrid = new THREE.GridHelper(width, 20, 0xff8c42, 0xff6b1a)
+                    floorGrid.position.y = -height / 2
+                    floorGrid.material.transparent = true
+                    floorGrid.material.opacity = 0.12
+                    roomGroup.add(floorGrid)
+
+                    // Paredes traseras con líneas verticales y horizontales
+                    const createWallLines = (positions, isVertical) => {
+                        positions.forEach(pos => {
+                            const points = []
+                            if (isVertical) {
+                                points.push(new THREE.Vector3(pos.x, -height / 2, pos.z))
+                                points.push(new THREE.Vector3(pos.x, height / 2, pos.z))
+                            } else {
+                                points.push(new THREE.Vector3(pos.x1, pos.y, pos.z))
+                                points.push(new THREE.Vector3(pos.x2, pos.y, pos.z))
+                            }
+                            const geometry = new THREE.BufferGeometry().setFromPoints(points)
+                            const line = new THREE.Line(geometry, lineMaterial)
+                            roomGroup.add(line)
+                        })
+                    }
+
+                    // Pared trasera - líneas verticales
+                    const backWallVertical = []
+                    for (let i = -10; i <= 10; i += 2) {
+                        backWallVertical.push({ x: i, z: -depth / 2 })
+                    }
+                    createWallLines(backWallVertical, true)
+
+                    // Pared trasera - líneas horizontales
+                    const backWallHorizontal = []
+                    for (let i = -height / 2; i <= height / 2; i += 2) {
+                        backWallHorizontal.push({ x1: -width / 2, x2: width / 2, y: i, z: -depth / 2 })
+                    }
+                    createWallLines(backWallHorizontal, false)
+
+                    // Paredes laterales
+                    const leftWallVertical = []
+                    for (let i = -10; i <= 10; i += 2) {
+                        leftWallVertical.push({ x: -width / 2, z: i })
+                    }
+                    createWallLines(leftWallVertical, true)
+
+                    const rightWallVertical = []
+                    for (let i = -10; i <= 10; i += 2) {
+                        rightWallVertical.push({ x: width / 2, z: i })
+                    }
+                    createWallLines(rightWallVertical, true)
+
+                    // Marco de la habitación
+                    const framePoints = [
+                        // Marco inferior
+                        new THREE.Vector3(-width / 2, -height / 2, -depth / 2),
+                        new THREE.Vector3(width / 2, -height / 2, -depth / 2),
+                        new THREE.Vector3(width / 2, -height / 2, depth / 2),
+                        new THREE.Vector3(-width / 2, -height / 2, depth / 2),
+                        new THREE.Vector3(-width / 2, -height / 2, -depth / 2),
+
+                        // Subir a marco superior
+                        new THREE.Vector3(-width / 2, height / 2, -depth / 2),
+                        new THREE.Vector3(width / 2, height / 2, -depth / 2),
+                        new THREE.Vector3(width / 2, height / 2, depth / 2),
+                        new THREE.Vector3(-width / 2, height / 2, depth / 2),
+                        new THREE.Vector3(-width / 2, height / 2, -depth / 2),
+                    ]
+
+                    const frameGeometry = new THREE.BufferGeometry().setFromPoints(framePoints)
+                    const frameLine = new THREE.Line(frameGeometry, new THREE.LineBasicMaterial({
+                        color: 0xff8c42,
+                        transparent: true,
+                        opacity: 0.3
+                    }))
+                    roomGroup.add(frameLine)
+
+                    // Líneas verticales de esquinas
+                    const corners = [
+                        [new THREE.Vector3(width / 2, -height / 2, -depth / 2), new THREE.Vector3(width / 2, height / 2, -depth / 2)],
+                        [new THREE.Vector3(-width / 2, -height / 2, depth / 2), new THREE.Vector3(-width / 2, height / 2, depth / 2)],
+                        [new THREE.Vector3(width / 2, -height / 2, depth / 2), new THREE.Vector3(width / 2, height / 2, depth / 2)],
+                    ]
+
+                    corners.forEach(corner => {
+                        const geo = new THREE.BufferGeometry().setFromPoints(corner)
+                        const line = new THREE.Line(geo, new THREE.LineBasicMaterial({
+                            color: 0xff8c42,
+                            transparent: true,
+                            opacity: 0.3
+                        }))
+                        roomGroup.add(line)
+                    })
+
+                    roomGroup.position.z = -2
+                    scene.add(roomGroup)
+                }
+
+                createRoomBackground()
 
                 const camera = new THREE.PerspectiveCamera(
                     60,
@@ -357,7 +478,7 @@ export const GLBViewer = () => {
     }
 
     return (
-        <div className="relative h-screen w-screen overflow-hidden bg-[#050816]">
+        <div className="relative h-screen w-screen overflow-hidden bg-[#000000]">
             <div
                 ref={mountRef}
                 className="h-full w-full cursor-grab"
@@ -452,7 +573,7 @@ export const GLBViewer = () => {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="w-full max-w-md rounded-xl bg-[#1a0f0a] p-6 text-white shadow-2xl border border-white/10"
+                            className="w-full max-w-md rounded-xl bg-[#1a0f0aa1] p-6 text-white shadow-2xl border border-white/10"
                         >
                             <div className="mb-4 flex items-center gap-3">
                                 <h2 className="text-3xl font-medium">¿Salir del nivel?</h2>

@@ -36,6 +36,11 @@ function createWindow() {
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
+
+  // Handler para cerrar la aplicación
+  ipcMain.on('close-app', () => {
+    mainWindow.close();
+  });
 }
 
 // Función para determinar el tipo MIME

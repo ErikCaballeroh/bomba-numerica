@@ -17,6 +17,11 @@ const heartbeatVariants = {
 export default function MainMenu() {
     const { goGame, goLevels } = useNavigation();
 
+    const handleExit = () => {
+        window.electron.ipcRenderer.send('close-app');
+        console.log('Exit command sent to main process');
+    }
+
     return (
         <div className="relative min-h-screen w-screen overflow-hidden">
             {/* Fondo 3D */}
@@ -37,6 +42,7 @@ export default function MainMenu() {
                 <div className="w-full max-w-lg bg-neutral-900/80 backdrop-blur-sm border border-neutral-600 rounded-xl p-10 shadow-2xl flex flex-col gap-10 mx-4">
                     <Button onClick={goLevels}>Jugar</Button>
                     <Button>Ajustes</Button>
+                    <Button onClick={handleExit}>Salir</Button>
                 </div>
             </div>
         </div>
