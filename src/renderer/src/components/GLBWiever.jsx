@@ -431,7 +431,7 @@ export const GLBViewer = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={resetRotation}
-                        className="flex items-center gap-2 rounded-lg bg-blue-500/90 px-4 py-2 text-sm font-semibold text-white shadow-lg backdrop-blur-md hover:bg-blue-400/90 cursor-pointer"
+                        className="flex items-center gap-2 rounded-lg bg-white/10 px-5 py-3 text-sm font-semibold text-white shadow-lg backdrop-blur-md hover:bg-white/20 cursor-pointer"
                     >
                         <RotateCcw className="h-4 w-4" />
                         Reiniciar rotación
@@ -452,13 +452,12 @@ export const GLBViewer = () => {
                             initial={{ opacity: 0, scale: 0.9, y: 20 }}
                             animate={{ opacity: 1, scale: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                            className="w-full max-w-md rounded-3xl bg-[#1a0f0a] p-6 text-white shadow-2xl border border-white/10"
+                            className="w-full max-w-md rounded-xl bg-[#1a0f0a] p-6 text-white shadow-2xl border border-white/10"
                         >
                             <div className="mb-4 flex items-center gap-3">
-                                <AlertTriangle className="h-6 w-6 text-yellow-400" />
-                                <h2 className="text-xl font-black">¿Salir del nivel?</h2>
+                                <h2 className="text-3xl font-medium">¿Salir del nivel?</h2>
                             </div>
-                            <p className="mb-6 text-sm text-white/70">
+                            <p className="mb-6 text-lg text-white/70">
                                 Perderás el progreso actual de este intento. ¿Seguro que quieres volver a la
                                 selección de niveles?
                             </p>
@@ -466,14 +465,14 @@ export const GLBViewer = () => {
                                 <button
                                     type="button"
                                     onClick={cancelExit}
-                                    className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20"
+                                    className="rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 cursor-pointer"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="button"
                                     onClick={confirmExit}
-                                    className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-400"
+                                    className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 cursor-pointer"
                                 >
                                     Sí, salir
                                 </button>
