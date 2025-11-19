@@ -130,13 +130,75 @@ const disposeScene = (scene, renderer, container) => {
     renderer?.dispose()
 }
 
-export const useGLBScene = ({ onZoneClick } = {}) => {
+const createTimerDisplay = (timeSeconds) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 256
+
+    const ctx = canvas.getContext('2d')
+
+    const drawTime = (secondsTotal) => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        ctx.fillStyle = '#050308'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        ctx.strokeStyle = '#ff8c42'
+        ctx.lineWidth = 6
+        if (typeof ctx.roundRect === 'function') {
+            ctx.beginPath()
+            ctx.roundRect(18, 18, canvas.width - 36, canvas.height - 36, 24)
+            ctx.stroke()
+        } else {
+            ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36)
+        }
+
+        const minutes = Math.floor(secondsTotal / 60)
+        const seconds = secondsTotal % 60
+        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+
+        ctx.font = 'bold 150px "Arial", system-ui, sans-serif'
+        ctx.fillStyle = '#00ff4c'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
+        ctx.shadowBlur = 18
+        ctx.fillText(timeStr, canvas.width / 2, canvas.height / 2)
+    }
+
+    drawTime(timeSeconds)
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.needsUpdate = true
+
+    const geometry = new THREE.PlaneGeometry(1.2, 0.4)
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        toneMapped: false,
+    })
+    const mesh = new THREE.Mesh(geometry, material)
+
+    // Guardamos utilidades para actualizar sin recrear el mesh
+    mesh.userData.timer = {
+        canvas,
+        ctx,
+        texture,
+        drawTime,
+    }
+
+    return mesh
+}
+
+export const useGLBScene = ({ onZoneClick, moduleStatus = {}, timerSeconds = 0 } = {}) => {
     const mountRef = useRef(null)
     const containerRef = useRef(null)
+    const timerMeshRef = useRef(null)
     const isDragging = useRef(false)
     const previousMousePosition = useRef({ x: 0, y: 0 })
 
     const [modelUrl, setModelUrl] = useState(null)
+    const [modelRef, setModelRef] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
@@ -269,23 +331,58 @@ export const useGLBScene = ({ onZoneClick } = {}) => {
                     scene.add(container)
                     container.add(model)
 
-                    containerRef.current = container
+                    // Crear y añadir el timer al contenedor
+                    const timerMesh = createTimerDisplay(timerSeconds)
+                    timerMesh.position.set(0, -0.5, 1)
+                    container.add(timerMesh)
+                    timerMeshRef.current = timerMesh
 
-                    // Marcar partes interactivas del modelo por nombre
-                    const interactiveNames = [
-                        'MODULO1',
-                        'MODULO2',
-                        'MODULO3',
-                        'MODULO4',
-                        'MODULO5',
-                        'MODULO6',
-                        'TIMER',
-                    ]
+                    containerRef.current = container
+                    setModelRef(model)
+
+                    const getModuleIdFromName = (name) => {
+                        switch (name) {
+                            case 'MODULO1':
+                                return 'INTERPOLACION_LINEAL'
+                            case 'MODULO2':
+                                return 'INTERPOLACION_LAGRANGE'
+                            case 'MODULO3':
+                                return 'ECU_LINEALES_GAUSS_SEIDEL'
+                            case 'MODULO4':
+                                return 'MINIMOS_CUADRADOS_LINEA_RECTA'
+                            case 'MODULO5':
+                                return 'INTEGRACION_GENERAL'
+                            case 'MODULO6':
+                                return 'EDO_EULER_MODIFICADO'
+                            default:
+                                return null
+                        }
+                    }
+
+                    const getModuleColor = (name) => {
+                        const moduleId = getModuleIdFromName(name)
+                        if (!moduleId || moduleStatus[moduleId] === undefined) {
+                            return null
+                        }
+
+                        const completed = moduleStatus[moduleId]
+                        return completed ? new THREE.Color(0x00ff4c) : new THREE.Color(0xff2d2d)
+                    }
 
                     model.traverse((child) => {
                         if (!child.isMesh || !child.name) return
-                        if (interactiveNames.includes(child.name)) {
+
+                        const moduleId = getModuleIdFromName(child.name)
+                        const isModule = Boolean(moduleId)
+
+                        if (isModule) {
                             child.userData.interactiveId = child.name
+
+                            const newColor = getModuleColor(child.name)
+                            if (newColor && child.material && child.material.color) {
+                                child.material = child.material.clone()
+                                child.material.color.copy(newColor)
+                            }
                         }
                     })
 
@@ -318,7 +415,6 @@ export const useGLBScene = ({ onZoneClick } = {}) => {
             )
 
             const handleMouseDown = (event) => {
-                // Rotar solo con botón derecho (event.button === 2)
                 if (event.button === 2) {
                     isDragging.current = true
                     previousMousePosition.current = { x: event.clientX, y: event.clientY }
@@ -352,7 +448,6 @@ export const useGLBScene = ({ onZoneClick } = {}) => {
             const pointer = new THREE.Vector2()
 
             const handleClick = (event) => {
-                // Solo detectar módulos con clic izquierdo
                 if (event.button !== 0) return
                 if (!onZoneClick || !containerRef.current) return
 
@@ -434,6 +529,70 @@ export const useGLBScene = ({ onZoneClick } = {}) => {
             return undefined
         }
     }, [modelUrl])
+
+    // Actualizar el timer cuando cambie timerSeconds sin recrear el mesh
+    useEffect(() => {
+        if (!timerMeshRef.current) return
+
+        const timerData = timerMeshRef.current.userData.timer
+        if (!timerData) return
+
+        timerData.drawTime(timerSeconds)
+        timerData.texture.needsUpdate = true
+    }, [timerSeconds])
+
+    // Actualizar colores cuando cambie el estado de los módulos sin recargar el modelo
+    useEffect(() => {
+        if (!modelRef) return
+
+        const getModuleIdFromName = (name) => {
+            switch (name) {
+                case 'MODULO1':
+                    return 'INTERPOLACION_LINEAL'
+                case 'MODULO2':
+                    return 'INTERPOLACION_LAGRANGE'
+                case 'MODULO3':
+                    return 'ECU_LINEALES_GAUSS_SEIDEL'
+                case 'MODULO4':
+                    return 'MINIMOS_CUADRADOS_LINEA_RECTA'
+                case 'MODULO5':
+                    return 'INTEGRACION_GENERAL'
+                case 'MODULO6':
+                    return 'EDO_EULER_MODIFICADO'
+                default:
+                    return null
+            }
+        }
+
+        const getModuleColor = (name) => {
+            const moduleId = getModuleIdFromName(name)
+            if (!moduleId || moduleStatus[moduleId] === undefined) {
+                return null
+            }
+
+            const completed = moduleStatus[moduleId]
+            return completed ? new THREE.Color(0x00ff4c) : new THREE.Color(0xff2d2d)
+        }
+
+        modelRef.traverse((child) => {
+            if (!child.isMesh || !child.name) return
+
+            const moduleId = getModuleIdFromName(child.name)
+            const isModule = Boolean(moduleId)
+
+            if (!isModule) return
+
+            const newColor = getModuleColor(child.name)
+            if (!newColor || !child.material || !child.material.color) return
+
+            if (!child.material.isMaterialClonedForModule) {
+                child.material = child.material.clone()
+                child.material.isMaterialClonedForModule = true
+            }
+
+            child.material.color.copy(newColor)
+        })
+    }, [modelRef, moduleStatus])
 
     return {
         mountRef,
