@@ -121,7 +121,7 @@ export const BombScene = () => {
             {/* Contenedor de modulos */}
             {activeMiniGame && (
                 <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-5xl rounded-2xl border border-white/10 bg-[#1a0f0aa1] p-6 text-white shadow-2xl">
+                    <div className="w-full max-w-5xl max-h-screen overflow-y-scroll rounded-2xl border border-white/10 bg-[#1a0f0aa1] p-6 text-white shadow-2xl">
                         {moduleErrors[activeMiniGame] ? (
                             <p className="mb-4 text-sm text-rose-200/90">
                                 Errores registrados en este modulo: {moduleErrors[activeMiniGame]}
