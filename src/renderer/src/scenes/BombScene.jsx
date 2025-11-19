@@ -8,47 +8,54 @@ import { ErrorBanner } from '../components/glbViewer/ErrorBanner'
 import { ResetRotationButton } from '../components/glbViewer/ResetRotationButton'
 import { ExitConfirmationModal } from '../components/glbViewer/ExitConfirmationModal'
 import { PdfViewerButton } from '../components/glbViewer/PdfViewerButton'
+import { MODULE_COMPONENTS } from '../components/modules'
 
-const MINI_GAMES = {
-    MODULO1: 'MODULO1',
-    MODULO2: 'MODULO2',
-    MODULO3: 'MODULO3',
-    MODULO4: 'MODULO4',
-    MODULO5: 'MODULO5',
-    MODULO6: 'MODULO6',
-    TIMER: 'TIMER',
+const ZONE_MODULE_MAP = {
+    MODULO1: 'INTERPOLACION_LINEAL',
+    MODULO2: 'ECU_NO_LINEALES_METODO_GRAFICO',
+    MODULO3: 'ECU_LINEALES_GAUSS_SEIDEL',
+    MODULO4: 'MINIMOS_CUADRADOS_LINEA_RECTA',
+    MODULO5: 'INTEGRACION_GENERAL',
+    MODULO6: 'EDO_EULER_MODIFICADO',
+    TIMER: null
 }
+
+const TRACKED_MODULES = Array.from(
+    new Set(Object.values(ZONE_MODULE_MAP).filter((value) => Boolean(value)))
+)
+
+const createInitialModuleStatus = () =>
+    TRACKED_MODULES.reduce((acc, moduleId) => {
+        acc[moduleId] = false
+        return acc
+    }, {})
 
 export const BombScene = () => {
     const [showExitConfirm, setShowExitConfirm] = useState(false)
     const [activeMiniGame, setActiveMiniGame] = useState(null)
-    const [miniGamesStatus, setMiniGamesStatus] = useState({
-        MODULO1: false,
-        MODULO2: false,
-        MODULO3: false,
-        MODULO4: false,
-        MODULO5: false,
-        MODULO6: false,
-        TIMER: false,
-    })
+    const [miniGamesStatus, setMiniGamesStatus] = useState(() => createInitialModuleStatus())
+    const [moduleErrors, setModuleErrors] = useState({})
 
     const [hasWon, setHasWon] = useState(false)
 
     const { goLevels } = useNavigation()
 
+    const completedModules = Object.values(miniGamesStatus).filter(Boolean).length
+    const totalModules = TRACKED_MODULES.length
+
     const handleZoneClick = (zoneName) => {
-        const miniGameId = MINI_GAMES[zoneName]
-        if (!miniGameId) return
-        setActiveMiniGame(miniGameId)
+        const moduleId = ZONE_MODULE_MAP[zoneName]
+        if (!moduleId) return
+        setActiveMiniGame(moduleId)
     }
 
     const handleMiniGameComplete = () => {
         if (!activeMiniGame) return
 
         setMiniGamesStatus((prev) => {
+            if (!(activeMiniGame in prev)) return prev
             const next = { ...prev, [activeMiniGame]: true }
-            const allDone = Object.values(next).every(Boolean)
-            if (allDone) {
+            if (Object.values(next).every(Boolean)) {
                 setHasWon(true)
             }
             return next
@@ -57,12 +64,20 @@ export const BombScene = () => {
         setActiveMiniGame(null)
     }
 
+    const handleMiniGameError = () => {
+        if (!activeMiniGame) return
+        setModuleErrors((prev) => ({
+            ...prev,
+            [activeMiniGame]: (prev[activeMiniGame] || 0) + 1
+        }))
+    }
+
     const handleMiniGameClose = () => {
         setActiveMiniGame(null)
     }
 
     const { mountRef, loading, error, resetRotation, retry } = useGLBScene({
-        onZoneClick: handleZoneClick,
+        onZoneClick: handleZoneClick
     })
 
     const handleBackClick = () => {
@@ -97,30 +112,48 @@ export const BombScene = () => {
                 onConfirm={confirmExit}
                 onCancel={cancelExit}
             />
-            {/* Modal muy simple para minijuegos */}
+
+            {totalModules > 0 && (
+                <div className="pointer-events-none absolute bottom-6 left-6 z-30 rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+                    {completedModules}/{totalModules} modulos completados
+                </div>
+            )}
+            {/* Contenedor de modulos */}
             {activeMiniGame && (
                 <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-md rounded-xl bg-[#1a0f0aa1] p-6 text-white shadow-2xl border border-white/10">
-                        <h2 className="mb-4 text-2xl font-bold">Minijuego: {activeMiniGame}</h2>
-                        <p className="mb-6 text-sm text-white/80">
-                            Aquí irá la lógica del minijuego real. Por ahora, este botón simula completarlo.
-                        </p>
-                        <div className="flex justify-end gap-3">
-                            <button
-                                type="button"
-                                onClick={handleMiniGameClose}
-                                className="rounded-xl bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-600 cursor-pointer"
-                            >
-                                Cerrar
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleMiniGameComplete}
-                                className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-500 cursor-pointer"
-                            >
-                                Marcar como completado
-                            </button>
-                        </div>
+                    <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#1a0f0aa1] p-6 text-white shadow-2xl">
+                        {moduleErrors[activeMiniGame] ? (
+                            <p className="mb-4 text-sm text-rose-200/90">
+                                Errores registrados en este modulo: {moduleErrors[activeMiniGame]}
+                            </p>
+                        ) : (
+                            <p className="mb-4 text-xs uppercase tracking-[0.3em] text-white/50">Modulo activo</p>
+                        )}
+                        {(() => {
+                            const ActiveModule = MODULE_COMPONENTS[activeMiniGame]
+                            if (!ActiveModule) {
+                                return (
+                                    <div className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center text-white/80">
+                                        <p>Este modulo aun no esta configurado.</p>
+                                        <button
+                                            type="button"
+                                            onClick={handleMiniGameClose}
+                                            className="mt-4 rounded-xl border border-white/20 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
+                                        >
+                                            Cerrar
+                                        </button>
+                                    </div>
+                                )
+                            }
+
+                            return (
+                                <ActiveModule
+                                    onComplete={handleMiniGameComplete}
+                                    onError={handleMiniGameError}
+                                    onClose={handleMiniGameClose}
+                                />
+                            )
+                        })()}
                     </div>
                 </div>
             )}
