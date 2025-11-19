@@ -114,14 +114,14 @@ export const BombScene = () => {
             />
 
             {totalModules > 0 && (
-                <div className="pointer-events-none absolute bottom-6 left-6 z-30 rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
+                <div className="pointer-events-none absolute top-6 right-6 z-30 rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
                     {completedModules}/{totalModules} modulos completados
                 </div>
             )}
             {/* Contenedor de modulos */}
             {activeMiniGame && (
                 <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-2xl rounded-2xl border border-white/10 bg-[#1a0f0aa1] p-6 text-white shadow-2xl">
+                    <div className="w-full max-w-5xl rounded-2xl border border-white/10 bg-[#1a0f0aa1] p-6 text-white shadow-2xl">
                         {moduleErrors[activeMiniGame] ? (
                             <p className="mb-4 text-sm text-rose-200/90">
                                 Errores registrados en este modulo: {moduleErrors[activeMiniGame]}
