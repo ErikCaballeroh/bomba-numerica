@@ -39,6 +39,11 @@ function createWindow() {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
+  // Abrir DevTools para debugging
+  if (is.dev) {
+    mainWindow.webContents.openDevTools()
+  }
+
   // Handler para cerrar la aplicación
   ipcMain.on('close-app', () => {
     mainWindow.close();
