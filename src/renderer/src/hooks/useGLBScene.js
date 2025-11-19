@@ -130,13 +130,14 @@ const disposeScene = (scene, renderer, container) => {
     renderer?.dispose()
 }
 
-export const useGLBScene = ({ onZoneClick } = {}) => {
+export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
     const mountRef = useRef(null)
     const containerRef = useRef(null)
     const isDragging = useRef(false)
     const previousMousePosition = useRef({ x: 0, y: 0 })
 
     const [modelUrl, setModelUrl] = useState(null)
+    const [modelRef, setModelRef] = useState(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
@@ -177,6 +178,8 @@ export const useGLBScene = ({ onZoneClick } = {}) => {
     }, [loadModel])
 
     useEffect(() => {
+        // Solo inicializar Three.js cuando hay URL de modelo;
+        // no depende de moduleStatus para evitar recargar la escena.
         if (!modelUrl) return undefined
 
         const initThreeJS = () => {
@@ -270,22 +273,54 @@ export const useGLBScene = ({ onZoneClick } = {}) => {
                     container.add(model)
 
                     containerRef.current = container
+                    setModelRef(model)
 
-                    // Marcar partes interactivas del modelo por nombre
-                    const interactiveNames = [
-                        'MODULO1',
-                        'MODULO2',
-                        'MODULO3',
-                        'MODULO4',
-                        'MODULO5',
-                        'MODULO6',
-                        'TIMER',
-                    ]
+                    const getModuleIdFromName = (name) => {
+                        switch (name) {
+                            case 'MODULO1':
+                                return 'INTERPOLACION_LINEAL'
+                            case 'MODULO2':
+                                return 'INTERPOLACION_LAGRANGE'
+                            case 'MODULO3':
+                                return 'ECU_LINEALES_GAUSS_SEIDEL'
+                            case 'MODULO4':
+                                return 'MINIMOS_CUADRADOS_LINEA_RECTA'
+                            case 'MODULO5':
+                                return 'INTEGRACION_GENERAL'
+                            case 'MODULO6':
+                                return 'EDO_EULER_MODIFICADO'
+                            default:
+                                return null
+                        }
+                    }
+
+                    const getModuleColor = (name) => {
+                        const moduleId = getModuleIdFromName(name)
+                        if (!moduleId || moduleStatus[moduleId] === undefined) {
+                            // Sin módulo asignado o no rastreado: no modificar color
+                            return null
+                        }
+
+                        const completed = moduleStatus[moduleId]
+                        // Verde si completado, rojo si no
+                        return completed ? new THREE.Color(0x00ff4c) : new THREE.Color(0xff2d2d)
+                    }
 
                     model.traverse((child) => {
                         if (!child.isMesh || !child.name) return
-                        if (interactiveNames.includes(child.name)) {
+
+                        const moduleId = getModuleIdFromName(child.name)
+                        const isModule = Boolean(moduleId)
+
+                        if (isModule) {
                             child.userData.interactiveId = child.name
+
+                            const newColor = getModuleColor(child.name)
+                            if (newColor && child.material && child.material.color) {
+                                // Clonar material para no afectar a otros meshes que lo compartan
+                                child.material = child.material.clone()
+                                child.material.color.copy(newColor)
+                            }
                         }
                     })
 
@@ -434,6 +469,60 @@ export const useGLBScene = ({ onZoneClick } = {}) => {
             return undefined
         }
     }, [modelUrl])
+
+    // Actualizar colores cuando cambie el estado de los módulos sin recargar el modelo
+    useEffect(() => {
+        if (!modelRef) return
+
+        const getModuleIdFromName = (name) => {
+            switch (name) {
+                case 'MODULO1':
+                    return 'INTERPOLACION_LINEAL'
+                case 'MODULO2':
+                    return 'INTERPOLACION_LAGRANGE'
+                case 'MODULO3':
+                    return 'ECU_LINEALES_GAUSS_SEIDEL'
+                case 'MODULO4':
+                    return 'MINIMOS_CUADRADOS_LINEA_RECTA'
+                case 'MODULO5':
+                    return 'INTEGRACION_GENERAL'
+                case 'MODULO6':
+                    return 'EDO_EULER_MODIFICADO'
+                default:
+                    return null
+            }
+        }
+
+        const getModuleColor = (name) => {
+            const moduleId = getModuleIdFromName(name)
+            if (!moduleId || moduleStatus[moduleId] === undefined) {
+                return null
+            }
+
+            const completed = moduleStatus[moduleId]
+            return completed ? new THREE.Color(0x00ff4c) : new THREE.Color(0xff2d2d)
+        }
+
+        modelRef.traverse((child) => {
+            if (!child.isMesh || !child.name) return
+
+            const moduleId = getModuleIdFromName(child.name)
+            const isModule = Boolean(moduleId)
+
+            if (!isModule) return
+
+            const newColor = getModuleColor(child.name)
+            if (!newColor || !child.material || !child.material.color) return
+
+            // Asegurarnos de no compartir material con otros meshes
+            if (!child.material.isMaterialClonedForModule) {
+                child.material = child.material.clone()
+                child.material.isMaterialClonedForModule = true
+            }
+
+            child.material.color.copy(newColor)
+        })
+    }, [modelRef, moduleStatus])
 
     return {
         mountRef,

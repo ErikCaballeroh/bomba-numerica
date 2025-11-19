@@ -77,7 +77,8 @@ export const BombScene = () => {
     }
 
     const { mountRef, loading, error, resetRotation, retry } = useGLBScene({
-        onZoneClick: handleZoneClick
+        onZoneClick: handleZoneClick,
+        moduleStatus: miniGamesStatus,
     })
 
     const handleBackClick = () => {
