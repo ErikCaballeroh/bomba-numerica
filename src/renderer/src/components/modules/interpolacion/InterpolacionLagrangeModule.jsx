@@ -26,11 +26,11 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
       disabled={disabled}
       className="relative flex flex-col items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed h-full"
     >
-      {/* Cable vertical - muy largo */}
+      {/* Cable vertical */}
       <div className="relative w-4 h-60">
         {!isCut ? (
           <>
-            {/* Cable intacto - muy largo y sin efectos adicionales */}
+            {/* Cable intacto */}
             <div
               className={`absolute inset-0 rounded-full ${colorMap[color]} transition-all duration-300 group-hover:shadow-lg`}
               style={{
@@ -40,7 +40,7 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
           </>
         ) : (
           <>
-            {/* Cable cortado - muy largo */}
+            {/* Cable cortado */}
             <div className="absolute inset-0 flex flex-col items-center justify-between py-2">
               <div className={`w-4 h-30 ${colorMap[color]} rounded-t-full opacity-80`} />
               <div className="text-lg animate-pulse">⚡</div>
@@ -81,95 +81,91 @@ export const InterpolacionLagrangeModule = (props) => {
   const [finalResult, setFinalResult] = useState('')
   const [cutCable, setCutCable] = useState(null)
   const [resultMessage, setResultMessage] = useState('')
-  const [showSolution, setShowSolution] = useState(false)
+  const [isCompleted, setIsCompleted] = useState(false)
   const isActive = props.isActive !== false
 
-  // Pool de problemas predefinidos
+  // Pool de problemas predefinidos con el formato del ejemplo
   const problemsPool = [
     {
-      points: [
-        { x: 1, y: 2 },
-        { x: 3, y: 5 },
-        { x: 6, y: 8 },
-        { x: 8, y: 4 }
-      ],
-      targetX: 4
+      description: "Obtener g(x) para x = 2.4",
+      xValues: [2.2, 2.5, 2.8, 3.1, 3.4],
+      yValues: [2.54, 2.82, 3.21, 3.32, 3.41],
+      targetX: 2.4
     },
     {
-      points: [
-        { x: 0, y: 1 },
-        { x: 2, y: 4 },
-        { x: 4, y: 7 },
-        { x: 6, y: 3 }
-      ],
-      targetX: 3
+      description: "Obtener g(x) para x = 1.8", 
+      xValues: [1.0, 1.5, 2.0, 2.5, 3.0],
+      yValues: [2.1, 2.8, 3.2, 3.9, 4.5],
+      targetX: 1.8
     },
     {
-      points: [
-        { x: 2, y: 3 },
-        { x: 5, y: 6 },
-        { x: 7, y: 9 },
-        { x: 9, y: 2 }
-      ],
-      targetX: 6
+      description: "Obtener g(x) para x = 4.2",
+      xValues: [3.0, 3.5, 4.0, 4.5, 5.0],
+      yValues: [1.8, 2.3, 2.7, 3.4, 4.1],
+      targetX: 4.2
     },
     {
-      points: [
-        { x: 1, y: 1 },
-        { x: 4, y: 8 },
-        { x: 7, y: 5 },
-        { x: 10, y: 12 }
-      ],
-      targetX: 5
+      description: "Obtener g(x) para x = 2.7",
+      xValues: [2.0, 2.3, 2.6, 2.9, 3.2],
+      yValues: [3.1, 3.4, 3.8, 4.1, 4.5],
+      targetX: 2.7
     }
   ]
 
   // Generar problema aleatorio
   useEffect(() => {
     const selectedProblem = getRandomFrom(problemsPool)
-    const correctGx = calculateLagrange(selectedProblem.points, selectedProblem.targetX)
+    const points = selectedProblem.xValues.map((x, index) => ({
+      x,
+      y: selectedProblem.yValues[index]
+    }))
+    const correctGx = calculateLagrange(points, selectedProblem.targetX)
     
     setProblem({
       ...selectedProblem,
+      points,
       correctGx
     })
     
     setFinalResult('')
     setCutCable(null)
     setResultMessage('')
-    setShowSolution(false)
+    setIsCompleted(false)
   }, [])
 
   const handleCutCable = (color) => {
-    if (!isActive || !problem) return
+    if (!isActive || !problem || isCompleted) return
 
-    setCutCable(color)
-    
-    const finalResultNum = parseFloat(finalResult)
-    
-    if (isNaN(finalResultNum)) {
+    // No permitir cortar cables si no hay resultado ingresado
+    if (!finalResult.trim()) {
       setResultMessage('❌ Ingresa el resultado primero')
-      if (typeof props.onError === 'function') {
-        props.onError()
-      }
       return
     }
 
+    const finalResultNum = parseFloat(finalResult)
+    
+    if (isNaN(finalResultNum)) {
+      setResultMessage('❌ Ingresa un resultado válido')
+      return
+    }
+
+    setCutCable(color)
+    
     const finalCorrect = Math.abs(finalResultNum - problem.correctGx) < 0.01
     const signCorrect = (finalResultNum > 0 && color === 'blue') || 
                        (finalResultNum < 0 && color === 'green')
 
     if (finalCorrect && signCorrect) {
-      setResultMessage('✅ ¡Correcto! Bomba desactivada')
-      if (typeof props.onComplete === 'function') {
-        props.onComplete()
-      }
+      setResultMessage('✅ ¡Correcto! Módulo terminado')
+      setIsCompleted(true)
     } else {
       setResultMessage('❌ Error en el cálculo')
-      setShowSolution(true)
-      if (typeof props.onError === 'function') {
-        props.onError()
-      }
+    }
+  }
+
+  const handleComplete = () => {
+    if (typeof props.onComplete === 'function') {
+      props.onComplete()
     }
   }
 
@@ -180,6 +176,7 @@ export const InterpolacionLagrangeModule = (props) => {
   }
 
   const disabledClass = !isActive ? 'opacity-50 cursor-not-allowed' : ''
+  const cablesDisabled = !isActive || !finalResult.trim() || isCompleted
 
   return (
     <ModuleScaffold
@@ -191,36 +188,45 @@ export const InterpolacionLagrangeModule = (props) => {
       <div className="flex gap-8">
         {/* Panel izquierdo: Problema y entrada */}
         <div className="flex-1">
-          {/* Tabla de puntos estilizada */}
+          {/* Descripción del problema */}
           <div className={`rounded-lg border border-yellow-500/50 bg-yellow-500/5 p-4 mb-6 ${disabledClass}`}>
-            <div className="text-sm text-center font-bold text-yellow-300 mb-3">
-              Calcular: g({problem.targetX})
+            <div className="text-sm text-center font-bold text-yellow-300 mb-4">
+              {problem.description}
             </div>
-            <div className="bg-black/30 rounded border border-white/20">
-              {/* Header de la tabla */}
-              <div className="grid grid-cols-2 border-b border-white/20">
-                <div className="px-4 py-2 text-center font-bold border-r border-white/20">x</div>
-                <div className="px-4 py-2 text-center font-bold">y</div>
+            
+            {/* Tablas separadas para X y Y */}
+            <div className="grid grid-cols-2 gap-4">
+              {/* Tabla de X */}
+              <div className="bg-black/30 rounded border border-white/20">
+                <div className="px-4 py-2 text-center font-bold border-b border-white/20">x</div>
+                {problem.xValues.map((x, index) => (
+                  <div key={index} className="px-4 py-2 text-center border-b border-white/10 last:border-b-0 font-mono">
+                    {x}
+                  </div>
+                ))}
               </div>
-              {/* Filas de datos */}
-              {problem.points.map((point, index) => (
-                <div key={index} className="grid grid-cols-2 border-b border-white/10 last:border-b-0">
-                  <div className="px-4 py-2 text-center border-r border-white/20 font-mono">{point.x}</div>
-                  <div className="px-4 py-2 text-center font-mono">{point.y}</div>
-                </div>
-              ))}
+              
+              {/* Tabla de Y */}
+              <div className="bg-black/30 rounded border border-white/20">
+                <div className="px-4 py-2 text-center font-bold border-b border-white/20">y</div>
+                {problem.yValues.map((y, index) => (
+                  <div key={index} className="px-4 py-2 text-center border-b border-white/10 last:border-b-0 font-mono">
+                    {y}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 
           {/* Input final */}
-          <div className={`rounded-lg border border-purple-500/50 bg-purple-500/5 p-4 ${disabledClass}`}>
+          <div className={`rounded-lg border border-purple-500/50 bg-purple-500/5 p-4 mb-6 ${disabledClass}`}>
             <label className="block text-sm text-purple-300 mb-3 text-center font-bold">
               RESULTADO g({problem.targetX})
             </label>
             <input
               type="number"
               step="any"
-              disabled={!isActive}
+              disabled={!isActive || isCompleted}
               className="w-full rounded-lg border border-white/20 bg-black/40 px-4 py-3 text-lg text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
               value={finalResult}
               onChange={(e) => setFinalResult(e.target.value)}
@@ -231,58 +237,59 @@ export const InterpolacionLagrangeModule = (props) => {
           {/* Mensaje de resultado */}
           {resultMessage && (
             <div
-              className={`p-4 text-center text-sm font-bold rounded-lg mt-4 ${
+              className={`p-4 text-center text-sm font-bold rounded-lg ${
                 resultMessage.includes('Correcto')
                   ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
                   : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
               }`}
             >
               {resultMessage}
+              {isCompleted && (
+                <div className="mt-3">
+                  <button
+                    onClick={handleComplete}
+                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold transition-colors"
+                  >
+                    Cerrar Módulo
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
 
-        {/* Panel derecho: Solo los 2 cables funcionales */}
+        {/* Panel derecho: Cables */}
         <div className={`w-48 rounded-lg border border-red-500/50 bg-red-900/20 p-6 ${disabledClass} flex flex-col`}>
           <div className="text-sm text-red-300 text-center mb-6 font-bold">
             SELECCIONAR CABLE
           </div>
           
-          {/* Solo los 2 cables funcionales centrados */}
+          {/* Cables funcionales */}
           <div className="flex-1 flex items-center justify-center">
             <div className="flex gap-12">
               <CableVisual
                 color="blue"
                 isCut={cutCable === 'blue'}
                 onClick={() => handleCutCable('blue')}
-                disabled={!isActive}
+                disabled={cablesDisabled}
               />
               <CableVisual
                 color="green"
                 isCut={cutCable === 'green'}
                 onClick={() => handleCutCable('green')}
-                disabled={!isActive}
+                disabled={cablesDisabled}
               />
             </div>
           </div>
+
+          {/* Mensaje si no hay resultado */}
+          {!finalResult.trim() && (
+            <div className="text-xs text-center text-red-300/70 mt-4">
+              Ingresa el resultado para activar los cables
+            </div>
+          )}
         </div>
       </div>
-
-      {/* Solución solo en caso de error */}
-      {showSolution && (
-        <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4 mt-6">
-          <div className="text-sm text-center text-emerald-300 mb-3 font-bold">
-            SOLUCIÓN CORRECTA
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-emerald-200">g({problem.targetX}):</span>
-            <span className="text-emerald-300 font-mono font-bold text-lg">{problem.correctGx.toFixed(6)}</span>
-            <span className={`text-sm font-bold ${problem.correctGx > 0 ? 'text-blue-300' : 'text-green-300'}`}>
-              {problem.correctGx > 0 ? 'Cable azul' : 'Cable verde'}
-            </span>
-          </div>
-        </div>
-      )}
     </ModuleScaffold>
   )
 }
