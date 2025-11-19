@@ -130,7 +130,7 @@ const disposeScene = (scene, renderer, container) => {
     renderer?.dispose()
 }
 
-export const useGLBScene = () => {
+export const useGLBScene = ({ onZoneClick } = {}) => {
     const mountRef = useRef(null)
     const containerRef = useRef(null)
     const isDragging = useRef(false)
@@ -217,6 +217,7 @@ export const useGLBScene = () => {
             canvas.style.position = 'fixed'
             canvas.style.top = '0'
             canvas.style.left = '0'
+            canvas.style.cursor = 'default'
 
             const ambientLight = new THREE.AmbientLight(0x404040, 1.2)
             scene.add(ambientLight)
@@ -270,6 +271,24 @@ export const useGLBScene = () => {
 
                     containerRef.current = container
 
+                    // Marcar partes interactivas del modelo por nombre
+                    const interactiveNames = [
+                        'MODULO1',
+                        'MODULO2',
+                        'MODULO3',
+                        'MODULO4',
+                        'MODULO5',
+                        'MODULO6',
+                        'TIMER',
+                    ]
+
+                    model.traverse((child) => {
+                        if (!child.isMesh || !child.name) return
+                        if (interactiveNames.includes(child.name)) {
+                            child.userData.interactiveId = child.name
+                        }
+                    })
+
                     model.rotation.x = Math.PI / 2
 
                     const box = new THREE.Box3().setFromObject(model)
@@ -299,11 +318,13 @@ export const useGLBScene = () => {
             )
 
             const handleMouseDown = (event) => {
-                if (event.button !== 0) return
-                isDragging.current = true
-                previousMousePosition.current = { x: event.clientX, y: event.clientY }
-                canvas.style.cursor = 'grabbing'
-                event.preventDefault()
+                // Rotar solo con botón derecho (event.button === 2)
+                if (event.button === 2) {
+                    isDragging.current = true
+                    previousMousePosition.current = { x: event.clientX, y: event.clientY }
+                    canvas.style.cursor = 'grabbing'
+                    event.preventDefault()
+                }
             }
 
             const handleMouseMove = (event) => {
@@ -320,10 +341,33 @@ export const useGLBScene = () => {
             }
 
             const handleMouseUp = (event) => {
+                if (event.button === 2) {
+                    isDragging.current = false
+                    canvas.style.cursor = 'default'
+                    event.preventDefault()
+                }
+            }
+
+            const raycaster = new THREE.Raycaster()
+            const pointer = new THREE.Vector2()
+
+            const handleClick = (event) => {
+                // Solo detectar módulos con clic izquierdo
                 if (event.button !== 0) return
-                isDragging.current = false
-                canvas.style.cursor = 'grab'
-                event.preventDefault()
+                if (!onZoneClick || !containerRef.current) return
+
+                const rect = canvas.getBoundingClientRect()
+                pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1
+                pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1
+
+                raycaster.setFromCamera(pointer, camera)
+
+                const intersections = raycaster.intersectObjects(containerRef.current.children, true)
+                const hit = intersections.find((intersect) => intersect.object.userData.interactiveId)
+
+                if (hit) {
+                    onZoneClick(hit.object.userData.interactiveId)
+                }
             }
 
             const handleWheel = (event) => {
@@ -339,6 +383,7 @@ export const useGLBScene = () => {
             canvas.addEventListener('mousedown', handleMouseDown, { passive: false })
             canvas.addEventListener('mousemove', handleMouseMove, { passive: false })
             canvas.addEventListener('mouseup', handleMouseUp, { passive: false })
+            canvas.addEventListener('click', handleClick, { passive: true })
             canvas.addEventListener('wheel', handleWheel, { passive: false })
             canvas.addEventListener('contextmenu', (e) => e.preventDefault())
             window.addEventListener('resize', handleResize)
@@ -368,6 +413,7 @@ export const useGLBScene = () => {
                 canvas.removeEventListener('mousedown', handleMouseDown)
                 canvas.removeEventListener('mousemove', handleMouseMove)
                 canvas.removeEventListener('mouseup', handleMouseUp)
+                canvas.removeEventListener('click', handleClick)
                 canvas.removeEventListener('wheel', handleWheel)
                 window.removeEventListener('resize', handleResize)
 
