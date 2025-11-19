@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigation } from '../hooks/useNavigation'
 import { useGLBScene } from '../hooks/useGLBScene'
 import { GradientOverlays } from '../components/glbViewer/GradientOverlays'
@@ -31,12 +31,17 @@ const createInitialModuleStatus = () =>
     }, {})
 
 export const BombScene = () => {
+    const BOMB_TOTAL_SECONDS = 300 // 5 minutos
+
     const [showExitConfirm, setShowExitConfirm] = useState(false)
     const [activeMiniGame, setActiveMiniGame] = useState(null)
     const [miniGamesStatus, setMiniGamesStatus] = useState(() => createInitialModuleStatus())
     const [moduleErrors, setModuleErrors] = useState({})
 
     const [hasWon, setHasWon] = useState(false)
+
+    const [timeLeft, setTimeLeft] = useState(BOMB_TOTAL_SECONDS)
+    const [isTimerActive, setIsTimerActive] = useState(true)
 
     const { goLevels } = useNavigation()
 
@@ -76,9 +81,26 @@ export const BombScene = () => {
         setActiveMiniGame(null)
     }
 
+    // Cuenta regresiva del timer
+    useEffect(() => {
+        if (!isTimerActive) return
+        if (timeLeft <= 0) {
+            setIsTimerActive(false)
+            // Aquí puedes disparar lógica de "explota la bomba" si quieres
+            return
+        }
+
+        const id = setInterval(() => {
+            setTimeLeft((prev) => (prev > 0 ? prev - 1 : 0))
+        }, 1000)
+
+        return () => clearInterval(id)
+    }, [isTimerActive, timeLeft])
+
     const { mountRef, loading, error, resetRotation, retry } = useGLBScene({
         onZoneClick: handleZoneClick,
         moduleStatus: miniGamesStatus,
+        timerSeconds: timeLeft,
     })
 
     const handleBackClick = () => {

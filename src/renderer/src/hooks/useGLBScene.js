@@ -130,9 +130,70 @@ const disposeScene = (scene, renderer, container) => {
     renderer?.dispose()
 }
 
-export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
+const createTimerDisplay = (timeSeconds) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 512
+    canvas.height = 256
+
+    const ctx = canvas.getContext('2d')
+
+    const drawTime = (secondsTotal) => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+        ctx.fillStyle = '#050308'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+        ctx.strokeStyle = '#ff8c42'
+        ctx.lineWidth = 6
+        if (typeof ctx.roundRect === 'function') {
+            ctx.beginPath()
+            ctx.roundRect(18, 18, canvas.width - 36, canvas.height - 36, 24)
+            ctx.stroke()
+        } else {
+            ctx.strokeRect(18, 18, canvas.width - 36, canvas.height - 36)
+        }
+
+        const minutes = Math.floor(secondsTotal / 60)
+        const seconds = secondsTotal % 60
+        const timeStr = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
+
+        ctx.font = 'bold 150px "Arial", system-ui, sans-serif'
+        ctx.fillStyle = '#00ff4c'
+        ctx.textAlign = 'center'
+        ctx.textBaseline = 'middle'
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.7)'
+        ctx.shadowBlur = 18
+        ctx.fillText(timeStr, canvas.width / 2, canvas.height / 2)
+    }
+
+    drawTime(timeSeconds)
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.needsUpdate = true
+
+    const geometry = new THREE.PlaneGeometry(1.2, 0.4)
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+        transparent: true,
+        toneMapped: false,
+    })
+    const mesh = new THREE.Mesh(geometry, material)
+
+    // Guardamos utilidades para actualizar sin recrear el mesh
+    mesh.userData.timer = {
+        canvas,
+        ctx,
+        texture,
+        drawTime,
+    }
+
+    return mesh
+}
+
+export const useGLBScene = ({ onZoneClick, moduleStatus = {}, timerSeconds = 0 } = {}) => {
     const mountRef = useRef(null)
     const containerRef = useRef(null)
+    const timerMeshRef = useRef(null)
     const isDragging = useRef(false)
     const previousMousePosition = useRef({ x: 0, y: 0 })
 
@@ -178,8 +239,6 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
     }, [loadModel])
 
     useEffect(() => {
-        // Solo inicializar Three.js cuando hay URL de modelo;
-        // no depende de moduleStatus para evitar recargar la escena.
         if (!modelUrl) return undefined
 
         const initThreeJS = () => {
@@ -272,6 +331,12 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
                     scene.add(container)
                     container.add(model)
 
+                    // Crear y añadir el timer al contenedor
+                    const timerMesh = createTimerDisplay(timerSeconds)
+                    timerMesh.position.set(0, -0.5, 1)
+                    container.add(timerMesh)
+                    timerMeshRef.current = timerMesh
+
                     containerRef.current = container
                     setModelRef(model)
 
@@ -297,12 +362,10 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
                     const getModuleColor = (name) => {
                         const moduleId = getModuleIdFromName(name)
                         if (!moduleId || moduleStatus[moduleId] === undefined) {
-                            // Sin módulo asignado o no rastreado: no modificar color
                             return null
                         }
 
                         const completed = moduleStatus[moduleId]
-                        // Verde si completado, rojo si no
                         return completed ? new THREE.Color(0x00ff4c) : new THREE.Color(0xff2d2d)
                     }
 
@@ -317,7 +380,6 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
 
                             const newColor = getModuleColor(child.name)
                             if (newColor && child.material && child.material.color) {
-                                // Clonar material para no afectar a otros meshes que lo compartan
                                 child.material = child.material.clone()
                                 child.material.color.copy(newColor)
                             }
@@ -353,7 +415,6 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
             )
 
             const handleMouseDown = (event) => {
-                // Rotar solo con botón derecho (event.button === 2)
                 if (event.button === 2) {
                     isDragging.current = true
                     previousMousePosition.current = { x: event.clientX, y: event.clientY }
@@ -387,7 +448,6 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
             const pointer = new THREE.Vector2()
 
             const handleClick = (event) => {
-                // Solo detectar módulos con clic izquierdo
                 if (event.button !== 0) return
                 if (!onZoneClick || !containerRef.current) return
 
@@ -470,6 +530,17 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
         }
     }, [modelUrl])
 
+    // Actualizar el timer cuando cambie timerSeconds sin recrear el mesh
+    useEffect(() => {
+        if (!timerMeshRef.current) return
+
+        const timerData = timerMeshRef.current.userData.timer
+        if (!timerData) return
+
+        timerData.drawTime(timerSeconds)
+        timerData.texture.needsUpdate = true
+    }, [timerSeconds])
+
     // Actualizar colores cuando cambie el estado de los módulos sin recargar el modelo
     useEffect(() => {
         if (!modelRef) return
@@ -514,7 +585,6 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {} } = {}) => {
             const newColor = getModuleColor(child.name)
             if (!newColor || !child.material || !child.material.color) return
 
-            // Asegurarnos de no compartir material con otros meshes
             if (!child.material.isMaterialClonedForModule) {
                 child.material = child.material.clone()
                 child.material.isMaterialClonedForModule = true
