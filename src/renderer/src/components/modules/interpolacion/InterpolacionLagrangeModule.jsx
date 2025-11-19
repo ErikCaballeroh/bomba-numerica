@@ -24,41 +24,31 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
     <button
       onClick={onClick}
       disabled={disabled}
-      className="relative flex flex-col items-center group disabled:opacity-50 disabled:cursor-not-allowed"
+      className="relative flex flex-col items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed h-full"
     >
-      {/* Cable vertical */}
-      <div className="relative w-4 h-16 mb-1">
+      {/* Cable vertical - muy largo */}
+      <div className="relative w-4 h-60">
         {!isCut ? (
           <>
-            {/* Cable intacto */}
+            {/* Cable intacto - muy largo y sin efectos adicionales */}
             <div
-              className={`absolute inset-0 rounded-full ${colorMap[color]} transition-all duration-300 group-hover:shadow-lg group-hover:scale-105`}
+              className={`absolute inset-0 rounded-full ${colorMap[color]} transition-all duration-300 group-hover:shadow-lg`}
               style={{
                 boxShadow: `0 0 8px ${colorShadow[color]}`
-              }}
-            />
-            {/* Brillo en el cable */}
-            <div
-              className="absolute top-1/4 left-1/2 transform -translate-x-1/2 w-1 h-6 rounded-full opacity-60 blur-sm"
-              style={{
-                background: `linear-gradient(to bottom, rgba(255,255,255,0.9), transparent)`
               }}
             />
           </>
         ) : (
           <>
-            {/* Cable cortado */}
-            <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className={`w-4 h-8 ${colorMap[color]} rounded-t-full opacity-60`} />
+            {/* Cable cortado - muy largo */}
+            <div className="absolute inset-0 flex flex-col items-center justify-between py-2">
+              <div className={`w-4 h-30 ${colorMap[color]} rounded-t-full opacity-80`} />
               <div className="text-lg animate-pulse">⚡</div>
-              <div className={`w-4 h-8 ${colorMap[color]} rounded-b-full opacity-60`} />
+              <div className={`w-4 h-30 ${colorMap[color]} rounded-b-full opacity-80`} />
             </div>
           </>
         )}
       </div>
-      
-      {/* Base del cable */}
-      <div className={`w-6 h-2 rounded-sm ${colorMap[color]} opacity-80`} />
     </button>
   )
 }
@@ -252,16 +242,15 @@ export const InterpolacionLagrangeModule = (props) => {
           )}
         </div>
 
-        {/* Panel derecho: Cables de bomba agrupados */}
-        <div className={`w-48 rounded-lg border border-red-500/50 bg-red-900/20 p-6 ${disabledClass}`}>
+        {/* Panel derecho: Solo los 2 cables funcionales */}
+        <div className={`w-48 rounded-lg border border-red-500/50 bg-red-900/20 p-6 ${disabledClass} flex flex-col`}>
           <div className="text-sm text-red-300 text-center mb-6 font-bold">
             SELECCIONAR CABLE
           </div>
           
-          {/* Cables agrupados en patrón [II II] */}
-          <div className="flex flex-col items-center gap-4">
-            {/* Fila de cables */}
-            <div className="flex gap-8">
+          {/* Solo los 2 cables funcionales centrados */}
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex gap-12">
               <CableVisual
                 color="blue"
                 isCut={cutCable === 'blue'}
@@ -275,28 +264,7 @@ export const InterpolacionLagrangeModule = (props) => {
                 disabled={!isActive}
               />
             </div>
-            
-            {/* Separador visual */}
-            <div className="w-full h-px bg-red-500/30 my-2" />
-            
-            {/* Segunda fila de cables (opcional, para simetría) */}
-            <div className="flex gap-8 opacity-40">
-              <CableVisual
-                color="blue"
-                isCut={false}
-                onClick={() => {}}
-                disabled={true}
-              />
-              <CableVisual
-                color="green"
-                isCut={false}
-                onClick={() => {}}
-                disabled={true}
-              />
-            </div>
           </div>
-
-          {/* Instrucción mínima */}
         </div>
       </div>
 
