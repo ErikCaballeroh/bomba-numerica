@@ -47,7 +47,7 @@ export default function LevelSelection() {
     }
 
     const currentLevel = LEVELS[currentIndex]
-    const { goHome } = useNavigation()
+    const { goHome, goGame } = useNavigation()
 
     const handleDotClick = (index) => {
         setDirection(index > currentIndex ? 1 : -1)

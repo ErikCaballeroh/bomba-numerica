@@ -53,7 +53,7 @@ export default function LevelCard({ level }) {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         className={`relative z-10 w-full py-3 rounded-xl bg-linear-to-r ${level.color} text-white font-bold text-lg hover:shadow-xl transition-all duration-300 cursor-pointer`}
-                        onClick={goGame}
+                        onClick={() => goGame(level.id)}
                     >
                         PLAY
                     </motion.button>

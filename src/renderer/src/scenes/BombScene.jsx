@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
+import { useParams } from 'react-router-dom'
 import { useNavigation } from '../hooks/useNavigation'
 import { useGLBScene } from '../hooks/useGLBScene'
 import { GradientOverlays } from '../components/glbViewer/GradientOverlays'
@@ -8,49 +9,90 @@ import { ErrorBanner } from '../components/glbViewer/ErrorBanner'
 import { ResetRotationButton } from '../components/glbViewer/ResetRotationButton'
 import { ExitConfirmationModal } from '../components/glbViewer/ExitConfirmationModal'
 import { PdfViewerButton } from '../components/glbViewer/PdfViewerButton'
-import { MODULE_COMPONENTS } from '../components/modules'
+import { MODULE_COMPONENTS, MODULE_TOPICS } from '../components/modules'
 
-const ZONE_MODULE_MAP = {
-    MODULO1: 'INTERPOLACION_LINEAL',
-    MODULO2: 'INTERPOLACION_LAGRANGE',
-    MODULO3: 'ECU_LINEALES_GAUSS_SEIDEL',
-    MODULO4: 'MINIMOS_CUADRADOS_LINEA_RECTA',
-    MODULO5: 'INTEGRACION_GENERAL',
-    MODULO6: 'EDO_EULER_MODIFICADO',
-    TIMER: null
+// Tiempos base por tema (en segundos)
+const TOPIC_TIMES = {
+    INTERPOLACION: 30 * 60, // 30 min
+    ECUACIONES_LINEALES: 30 * 60, // 30 min
+    ECUACIONES_NO_LINEALES: 35 * 60, // 35 min
+    DEFAULT: 40 * 60 // 40 min para los demás
 }
 
-const TRACKED_MODULES = Array.from(
-    new Set(Object.values(ZONE_MODULE_MAP).filter((value) => Boolean(value)))
-)
+// Mapeo de nivel a tema
+const LEVEL_TOPICS = {
+    1: 'INTERPOLACION',
+    2: 'ECUACIONES_NO_LINEALES',
+    3: 'ECUACIONES_LINEALES',
+    4: 'INTEGRACION',
+    5: 'MINIMOS_CUADRADOS',
+    6: 'EDO'
+}
 
-const createInitialModuleStatus = () =>
-    TRACKED_MODULES.reduce((acc, moduleId) => {
-        acc[moduleId] = false
-        return acc
-    }, {})
+// Función para seleccionar 3 módulos aleatorios de un tema
+const selectRandomModules = (topicId) => {
+    const topic = MODULE_TOPICS.find(t => t.id === topicId)
+    if (!topic || !topic.modules) return []
+
+    const shuffled = [...topic.modules].sort(() => Math.random() - 0.5)
+    return shuffled.slice(0, Math.min(3, shuffled.length))
+}
+
+// Función para calcular el tiempo total según el tema
+const calculateTotalTime = (topicId) => {
+    const timePerModule = TOPIC_TIMES[topicId] || TOPIC_TIMES.DEFAULT
+    return timePerModule * 3 // 3 módulos
+}
 
 export const BombScene = () => {
-    const BOMB_TOTAL_SECONDS = 10 // 5 minutos
+    const { levelId } = useParams()
+    const { goLevels } = useNavigation()
+
+    // Configuración del nivel basada en el levelId
+    const levelConfig = useMemo(() => {
+        const topicId = LEVEL_TOPICS[parseInt(levelId)] || 'INTERPOLACION'
+        const selectedModules = selectRandomModules(topicId)
+        const totalTime = calculateTotalTime(topicId)
+
+        // Crear mapeo de zonas a módulos (MODULO1, MODULO2, MODULO3)
+        const zoneModuleMap = {}
+        selectedModules.forEach((module, index) => {
+            zoneModuleMap[`MODULO${index + 1}`] = module.id
+        })
+        zoneModuleMap.TIMER = null
+
+        // Crear estado inicial de módulos
+        const initialModuleStatus = {}
+        selectedModules.forEach(module => {
+            initialModuleStatus[module.id] = false
+        })
+
+        return {
+            topicId,
+            selectedModules,
+            totalTime,
+            zoneModuleMap,
+            initialModuleStatus,
+            trackedModules: selectedModules.map(m => m.id)
+        }
+    }, [levelId])
 
     const [showExitConfirm, setShowExitConfirm] = useState(false)
     const [activeMiniGame, setActiveMiniGame] = useState(null)
-    const [miniGamesStatus, setMiniGamesStatus] = useState(() => createInitialModuleStatus())
+    const [miniGamesStatus, setMiniGamesStatus] = useState(() => levelConfig.initialModuleStatus)
     const [moduleErrors, setModuleErrors] = useState({})
 
     const [hasWon, setHasWon] = useState(false)
     const [hasLost, setHasLost] = useState(false)
 
-    const [timeLeft, setTimeLeft] = useState(BOMB_TOTAL_SECONDS)
+    const [timeLeft, setTimeLeft] = useState(levelConfig.totalTime)
     const [isTimerActive, setIsTimerActive] = useState(true)
 
-    const { goLevels } = useNavigation()
-
     const completedModules = Object.values(miniGamesStatus).filter(Boolean).length
-    const totalModules = TRACKED_MODULES.length
+    const totalModules = levelConfig.trackedModules.length
 
     const handleZoneClick = (zoneName) => {
-        const moduleId = ZONE_MODULE_MAP[zoneName]
+        const moduleId = levelConfig.zoneModuleMap[zoneName]
         if (!moduleId) return
         setActiveMiniGame(moduleId)
     }
@@ -102,7 +144,7 @@ export const BombScene = () => {
         onZoneClick: handleZoneClick,
         moduleStatus: miniGamesStatus,
         timerSeconds: timeLeft,
-        zoneModuleMap: ZONE_MODULE_MAP,
+        zoneModuleMap: levelConfig.zoneModuleMap,
     })
 
     const handleBackClick = () => {
