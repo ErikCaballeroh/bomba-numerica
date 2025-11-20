@@ -12,6 +12,7 @@ function createWindow() {
     minHeight: 768,
     show: false,
     autoHideMenuBar: true,
+    title: 'Bomba Numerica',
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
