@@ -31,7 +31,7 @@ const createInitialModuleStatus = () =>
     }, {})
 
 export const BombScene = () => {
-    const BOMB_TOTAL_SECONDS = 300 // 5 minutos
+    const BOMB_TOTAL_SECONDS = 10 // 5 minutos
 
     const [showExitConfirm, setShowExitConfirm] = useState(false)
     const [activeMiniGame, setActiveMiniGame] = useState(null)
@@ -39,6 +39,7 @@ export const BombScene = () => {
     const [moduleErrors, setModuleErrors] = useState({})
 
     const [hasWon, setHasWon] = useState(false)
+    const [hasLost, setHasLost] = useState(false)
 
     const [timeLeft, setTimeLeft] = useState(BOMB_TOTAL_SECONDS)
     const [isTimerActive, setIsTimerActive] = useState(true)
@@ -86,7 +87,7 @@ export const BombScene = () => {
         if (!isTimerActive) return
         if (timeLeft <= 0) {
             setIsTimerActive(false)
-            // Aquí puedes disparar lógica de "explota la bomba" si quieres
+            setHasLost(true)
             return
         }
 
@@ -188,6 +189,24 @@ export const BombScene = () => {
                         <h2 className="mb-4 text-3xl font-bold">¡Has desactivado la bomba!</h2>
                         <p className="mb-6 text-sm text-emerald-100">
                             Completaste todos los minijuegos. Puedes volver a la selección de niveles.
+                        </p>
+                        <button
+                            type="button"
+                            onClick={goLevels}
+                            className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 cursor-pointer"
+                        >
+                            Volver a niveles
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {hasLost && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+                    <div className="w-full max-w-md rounded-xl bg-red-700/90 p-6 text-white shadow-2xl border border-white/10 text-center">
+                        <h2 className="mb-4 text-3xl font-bold">💥 ¡La bomba explotó!</h2>
+                        <p className="mb-6 text-sm text-red-100">
+                            Se acabó el tiempo. No lograste desactivar todos los módulos a tiempo.
                         </p>
                         <button
                             type="button"
