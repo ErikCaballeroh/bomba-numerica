@@ -1,23 +1,25 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useNavigation } from '../hooks/useNavigation'
 import LevelCard from '../components/levelSelection/LevelCard'
 import CarouselControls from '../components/levelSelection/CarouselControls'
 import NavigationDots from '../components/levelSelection/NavigationDots'
 import BackButton from '../components/levelSelection/BackButton'
+import { getGameProgress, formatTime, isLevelUnlocked } from '../utils/gameProgress'
 
-const LEVELS = [
-    { id: 1, name: 'Interpolacion', color: 'from-orange-400 to-amber-600', bestTime: '01:23', completed: true, locked: false },
-    { id: 2, name: 'Ecuaciones no lineales', color: 'from-yellow-400 to-orange-500', bestTime: '02:15', completed: true, locked: false },
-    { id: 3, name: 'Ecuaciones lineales', color: 'from-orange-500 to-red-600', bestTime: null, completed: false, locked: false },
-    { id: 4, name: 'Integracion', color: 'from-yellow-500 to-orange-600', bestTime: null, completed: false, locked: false },
-    { id: 5, name: 'Minimos Cuadrados', color: 'from-orange-600 to-red-700', bestTime: null, completed: false, locked: true },
-    { id: 6, name: 'Ecuaciones diferenciales', color: 'from-yellow-600 to-amber-700', bestTime: null, completed: false, locked: true },
+const BASE_LEVELS = [
+    { id: 1, name: 'Interpolacion', color: 'from-orange-400 to-amber-600', locked: false },
+    { id: 2, name: 'Ecuaciones no lineales', color: 'from-yellow-400 to-orange-500', locked: false },
+    { id: 3, name: 'Ecuaciones lineales', color: 'from-orange-500 to-red-600', locked: false },
+    { id: 4, name: 'Integracion', color: 'from-yellow-500 to-orange-600', locked: false },
+    { id: 5, name: 'Minimos Cuadrados', color: 'from-orange-600 to-red-700', locked: false },
+    { id: 6, name: 'Ecuaciones diferenciales', color: 'from-yellow-600 to-amber-700', locked: false },
 ]
 
 export default function LevelSelection() {
     const [currentIndex, setCurrentIndex] = useState(0)
     const [direction, setDirection] = useState(0)
+    const [levels, setLevels] = useState(BASE_LEVELS)
 
     const slideVariants = {
         enter: (dir) => ({
@@ -40,14 +42,29 @@ export default function LevelSelection() {
         setDirection(newDirection)
         setCurrentIndex((prevIndex) => {
             let newIndex = prevIndex + newDirection
-            if (newIndex < 0) newIndex = LEVELS.length - 1
-            if (newIndex >= LEVELS.length) newIndex = 0
+            if (newIndex < 0) newIndex = levels.length - 1
+            if (newIndex >= levels.length) newIndex = 0
             return newIndex
         })
     }
 
-    const currentLevel = LEVELS[currentIndex]
+    const currentLevel = levels[currentIndex]
     const { goHome, goGame } = useNavigation()
+
+    // Cargar progreso del juego
+    useEffect(() => {
+        const progress = getGameProgress()
+        const updatedLevels = BASE_LEVELS.map(level => {
+            const levelProgress = progress.levels[level.id]
+            return {
+                ...level,
+                completed: levelProgress?.completed || false,
+                bestTime: levelProgress?.bestTime ? formatTime(levelProgress.bestTime) : null,
+                locked: !isLevelUnlocked(level.id)
+            }
+        })
+        setLevels(updatedLevels)
+    }, [])
 
     const handleDotClick = (index) => {
         setDirection(index > currentIndex ? 1 : -1)
@@ -105,7 +122,7 @@ export default function LevelSelection() {
                     </div>
 
                     {/* Bottom Navigation Dots */}
-                    <NavigationDots levels={LEVELS} currentIndex={currentIndex} onDotClick={handleDotClick} />
+                    <NavigationDots levels={levels} currentIndex={currentIndex} onDotClick={handleDotClick} />
                 </div>
             </div>
         </div>

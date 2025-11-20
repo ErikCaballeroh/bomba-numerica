@@ -10,6 +10,7 @@ import { ResetRotationButton } from '../components/glbViewer/ResetRotationButton
 import { ExitConfirmationModal } from '../components/glbViewer/ExitConfirmationModal'
 import { PdfViewerButton } from '../components/glbViewer/PdfViewerButton'
 import { MODULE_COMPONENTS, MODULE_TOPICS } from '../components/modules'
+import { updateLevelProgress, calculateElapsedTime, formatTime } from '../utils/gameProgress'
 
 // Tiempos base por tema (en segundos)
 const TOPIC_TIMES = {
@@ -84,6 +85,7 @@ export const BombScene = () => {
 
     const [hasWon, setHasWon] = useState(false)
     const [hasLost, setHasLost] = useState(false)
+    const [completionTime, setCompletionTime] = useState(null)
 
     const [timeLeft, setTimeLeft] = useState(levelConfig.totalTime)
     const [isTimerActive, setIsTimerActive] = useState(true)
@@ -104,6 +106,15 @@ export const BombScene = () => {
             if (!(activeMiniGame in prev)) return prev
             const next = { ...prev, [activeMiniGame]: true }
             if (Object.values(next).every(Boolean)) {
+                // Calcular tiempo transcurrido
+                const elapsedTime = calculateElapsedTime(levelConfig.totalTime, timeLeft)
+                setCompletionTime(elapsedTime)
+
+                // Guardar progreso
+                updateLevelProgress(parseInt(levelId), elapsedTime)
+
+                // Detener timer
+                setIsTimerActive(false)
                 setHasWon(true)
             }
             return next
@@ -229,9 +240,15 @@ export const BombScene = () => {
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
                     <div className="w-full max-w-md rounded-xl bg-emerald-700/90 p-6 text-white shadow-2xl border border-white/10 text-center">
                         <h2 className="mb-4 text-3xl font-bold">¡Has desactivado la bomba!</h2>
-                        <p className="mb-6 text-sm text-emerald-100">
-                            Completaste todos los minijuegos. Puedes volver a la selección de niveles.
+                        <p className="mb-4 text-sm text-emerald-100">
+                            Completaste todos los módulos a tiempo.
                         </p>
+                        {completionTime !== null && (
+                            <div className="mb-6 rounded-xl bg-white/10 p-4">
+                                <p className="text-xs uppercase tracking-wider text-emerald-200/80 mb-2">Tiempo</p>
+                                <p className="text-4xl font-bold text-white">{formatTime(completionTime)}</p>
+                            </div>
+                        )}
                         <button
                             type="button"
                             onClick={goLevels}
