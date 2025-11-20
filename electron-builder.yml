@@ -13,6 +13,8 @@ asarUnpack:
 extraResources:
   - from: resources/models
     to: models
+  - from: src/renderer/src/assets/documento.pdf
+    to: assets/documento.pdf
 win:
   executableName: electron-app
 nsis:
