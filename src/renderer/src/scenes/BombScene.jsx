@@ -85,6 +85,7 @@ export const BombScene = () => {
 
     const [hasWon, setHasWon] = useState(false)
     const [hasLost, setHasLost] = useState(false)
+    const [lossReason, setLossReason] = useState(null) // 'timeout' o 'error'
     const [completionTime, setCompletionTime] = useState(null)
 
     const [timeLeft, setTimeLeft] = useState(levelConfig.totalTime)
@@ -129,6 +130,12 @@ export const BombScene = () => {
             ...prev,
             [activeMiniGame]: (prev[activeMiniGame] || 0) + 1
         }))
+
+        // Terminar el juego inmediatamente al cometer un error
+        setIsTimerActive(false)
+        setLossReason('error')
+        setHasLost(true)
+        setActiveMiniGame(null)
     }
 
     const handleMiniGameClose = () => {
@@ -140,6 +147,7 @@ export const BombScene = () => {
         if (!isTimerActive) return
         if (timeLeft <= 0) {
             setIsTimerActive(false)
+            setLossReason('timeout')
             setHasLost(true)
             return
         }
@@ -169,6 +177,11 @@ export const BombScene = () => {
 
     const cancelExit = () => {
         setShowExitConfirm(false)
+    }
+
+    const handleRetry = () => {
+        // Recargar la página para reiniciar el nivel con nuevos módulos aleatorios
+        window.location.reload()
     }
 
     return (
@@ -263,17 +276,37 @@ export const BombScene = () => {
             {hasLost && (
                 <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
                     <div className="w-full max-w-md rounded-xl bg-red-700/90 p-6 text-white shadow-2xl border border-white/10 text-center">
-                        <h2 className="mb-4 text-3xl font-bold">💥 ¡La bomba explotó!</h2>
-                        <p className="mb-6 text-sm text-red-100">
-                            Se acabó el tiempo. No lograste desactivar todos los módulos a tiempo.
-                        </p>
-                        <button
-                            type="button"
-                            onClick={goLevels}
-                            className="rounded-xl bg-white/10 px-4 py-2 text-sm font-semibold text-white hover:bg-white/20 cursor-pointer"
-                        >
-                            Volver a niveles
-                        </button>
+                        {lossReason === 'timeout' ? (
+                            <>
+                                <h2 className="mb-4 text-3xl font-bold">💥 ¡La bomba explotó!</h2>
+                                <p className="mb-6 text-sm text-red-100">
+                                    Se acabó el tiempo. No lograste desactivar todos los módulos a tiempo.
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <h2 className="mb-4 text-3xl font-bold">💥 ¡La bomba explotó!</h2>
+                                <p className="mb-6 text-sm text-red-100">
+                                    Cometiste un error al resolver el módulo. La bomba se activó y explotó.
+                                </p>
+                            </>
+                        )}
+                        <div className="flex gap-3 justify-center">
+                            <button
+                                type="button"
+                                onClick={handleRetry}
+                                className="rounded-xl bg-orange-600/80 px-6 py-2 text-sm font-semibold text-white hover:bg-orange-600 cursor-pointer transition-colors"
+                            >
+                                Reintentar
+                            </button>
+                            <button
+                                type="button"
+                                onClick={goLevels}
+                                className="rounded-xl bg-white/10 px-6 py-2 text-sm font-semibold text-white hover:bg-white/20 cursor-pointer transition-colors"
+                            >
+                                Volver a niveles
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}

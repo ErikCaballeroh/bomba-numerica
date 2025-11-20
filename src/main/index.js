@@ -28,6 +28,16 @@ function createWindow() {
     mainWindow.show()
   })
 
+  // Cerrar todas las ventanas cuando se cierra la ventana principal
+  mainWindow.on('close', () => {
+    const allWindows = BrowserWindow.getAllWindows()
+    allWindows.forEach(window => {
+      if (window !== mainWindow) {
+        window.close()
+      }
+    })
+  })
+
   mainWindow.webContents.setWindowOpenHandler((details) => {
     shell.openExternal(details.url)
     return { action: 'deny' }
@@ -40,14 +50,9 @@ function createWindow() {
   }
 
   // Abrir DevTools para debugging
-  if (is.dev) {
-    mainWindow.webContents.openDevTools()
-  }
-
-  // Handler para cerrar la aplicación
-  ipcMain.on('close-app', () => {
-    mainWindow.close();
-  });
+  // if (is.dev) {
+  //   mainWindow.webContents.openDevTools()
+  // }
 }
 
 // Función para determinar el tipo MIME
@@ -150,6 +155,50 @@ app.whenReady().then(() => {
 
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  // Registrar handlers de IPC
+  ipcMain.on('close-app', () => {
+    const mainWindow = BrowserWindow.getFocusedWindow()
+    if (mainWindow) {
+      mainWindow.close()
+    }
+  })
+
+  ipcMain.on('open-pdf-window', () => {
+    console.log('Handler open-pdf-window llamado')
+    
+    const pdfWindow = new BrowserWindow({
+      width: 1000,
+      height: 700,
+      autoHideMenuBar: true,
+      webPreferences: {
+        contextIsolation: false,
+        nodeIntegration: true,
+        webSecurity: false
+      }
+    })
+
+    const pdfPath = is.dev
+      ? join(__dirname, '../../src/renderer/src/assets/documento.pdf')
+      : join(process.resourcesPath, 'assets/documento.pdf')
+
+    console.log('Intentando cargar PDF desde:', pdfPath)
+
+    // Usar loadURL en lugar de loadFile para PDFs
+    pdfWindow.loadURL(`file://${pdfPath}`)
+
+    pdfWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+      console.error('Error cargando PDF:', errorCode, errorDescription)
+    })
+
+    pdfWindow.webContents.on('did-finish-load', () => {
+      console.log('PDF cargado exitosamente')
+    })
+
+    // if (is.dev) {
+    //   pdfWindow.webContents.openDevTools()
+    // }
   })
 
   createWindow()

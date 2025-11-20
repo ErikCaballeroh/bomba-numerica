@@ -4,7 +4,8 @@ import { electronAPI } from '@electron-toolkit/preload'
 const api = {
   readModelFile: (filename) => ipcRenderer.invoke('read-model-file', filename),
   listModelFiles: () => ipcRenderer.invoke('list-model-files'),
-  loadModelWithAssets: (modelName) => ipcRenderer.invoke('load-model-with-assets', modelName)
+  loadModelWithAssets: (modelName) => ipcRenderer.invoke('load-model-with-assets', modelName),
+  openPdfWindow: () => ipcRenderer.send('open-pdf-window')
 }
 
 if (process.contextIsolated) {
