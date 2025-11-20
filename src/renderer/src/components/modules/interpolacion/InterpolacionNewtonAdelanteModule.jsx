@@ -25,19 +25,11 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
     yellow: 'rgba(245,158,11, 0.6)'
   }
 
-  const colorLabel = {
-    blue: 'Azul',
-    green: 'Verde',
-    red: 'Rojo',
-    yellow: 'Amarillo'
-  }
-
   return (
     <button
       onClick={onClick}
       disabled={disabled}
       className="relative flex flex-col items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
-      title={`Cortar cable ${colorLabel[color]}`}
     >
       <div className="relative w-56 h-2 group">
         {!isCut ? (
@@ -67,7 +59,6 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
           </>
         )}
       </div>
-      <span className="text-xs text-white/80">{colorLabel[color]}</span>
     </button>
   )
 }
@@ -80,30 +71,71 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
   const [gxInput, setGxInput] = useState('')
   const [cutCable, setCutCable] = useState(null)
   const [resultMessage, setResultMessage] = useState('')
+  const [gxValidated, setGxValidated] = useState(false)
   const isActive = props.isActive !== false
 
-  // Pool de problemas: cada problema define x0, h y un array de y (4 puntos)
-  // Diseñados para distribuir entre los 4 colores según el orden de diferencia necesario
+  // Pool de 10 problemas realistas con tablas de datos
   const problemsPool = [
-    // Orden 0 (solo S0, diferencias despreciables) - AZUL
-    { x0: 1, h: 0.1, ys: [2.0, 2.001, 2.002, 2.003], description: 'Función casi constante' },
-    { x0: 5, h: 0.05, ys: [10.0, 10.0005, 10.001, 10.0015], description: 'Datos muy cercanos' },
-
-    // Orden 1 (lineal, S1 necesario) - VERDE
-    { x0: 0, h: 1, ys: [0, 2, 4, 6], description: 'Función lineal: y = 2x' },
-    { x0: 1, h: 1, ys: [1, 3, 5, 7], description: 'Función lineal: y = 2x - 1' },
-    { x0: 0, h: 2, ys: [1, 5, 9, 13], description: 'Función lineal: y = 2x + 1' },
-
-    // Orden 2 (cuadrática, S2 necesario) - ROJO
-    { x0: 0, h: 1, ys: [0, 1, 4, 9], description: 'Función cuadrática: y = x²' },
-    { x0: 1, h: 1, ys: [1, 4, 9, 16], description: 'Función cuadrática: y = x²' },
-    { x0: 0, h: 1, ys: [1, 2, 5, 10], description: 'Función cuadrática: y = x² + 1' },
-
-    // Orden 3+ (cúbica o superior, S3 necesario) - AMARILLO
-    { x0: 0, h: 1, ys: [0, 1, 8, 27], description: 'Función cúbica: y = x³' },
-    { x0: 1, h: 1, ys: [1, 8, 27, 64], description: 'Función cúbica: y = x³' },
-    { x0: 0, h: 1, ys: [1, 2, 9, 28], description: 'Función cúbica: y = x³ + 1' },
-    { x0: -1, h: 1, ys: [-1, 0, 7, 26], description: 'Función cúbica: y = x³' }
+    {
+      xs: [1.0, 1.5, 2.0, 2.5],
+      ys: [0.5403, 0.9975, 0.4161, -0.8011],
+      targetX: 1.8,
+      description: 'Datos trigonométricos'
+    },
+    {
+      xs: [0.5, 1.0, 1.5, 2.0],
+      ys: [1.6487, 2.7183, 4.4817, 7.3891],
+      targetX: 1.25,
+      description: 'Función exponencial'
+    },
+    {
+      xs: [1.2, 1.8, 2.4, 3.0],
+      ys: [0.3365, 0.5878, 0.8755, 1.0986],
+      targetX: 2.1,
+      description: 'Función logarítmica'
+    },
+    {
+      xs: [0.0, 0.5, 1.0, 1.5],
+      ys: [1.0000, 1.1275, 1.5000, 2.0616],
+      targetX: 0.75,
+      description: 'Datos polinomiales'
+    },
+    {
+      xs: [2.0, 2.5, 3.0, 3.5],
+      ys: [4.0000, 6.2500, 9.0000, 12.2500],
+      targetX: 2.8,
+      description: 'Función cuadrática'
+    },
+    {
+      xs: [1.0, 1.3, 1.6, 1.9],
+      ys: [0.8415, 0.9636, 0.9996, 0.9463],
+      targetX: 1.45,
+      description: 'Datos senoidales'
+    },
+    {
+      xs: [0.0, 0.4, 0.8, 1.2],
+      ys: [0.0000, 0.0640, 0.5120, 1.7280],
+      targetX: 0.6,
+      description: 'Función cúbica'
+    },
+    {
+      xs: [1.5, 2.0, 2.5, 3.0],
+      ys: [3.3750, 8.0000, 15.6250, 27.0000],
+      targetX: 2.3,
+      description: 'Polinomio de orden superior'
+    },
+    {
+      xs: [0.2, 0.6, 1.0, 1.4],
+      ys: [1.2214, 1.8221, 2.7183, 4.0552],
+      targetX: 0.8,
+      description: 'Crecimiento exponencial'
+    },
+    {
+      xs: [1.0, 1.4, 1.8, 2.2],
+      ys: [1.0000, 1.9600, 3.2400, 4.8400],
+      targetX: 1.6,
+      description: 'Relación cuadrática'
+    }
   ]
 
   // -------------------------
@@ -111,18 +143,20 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
   // -------------------------
   useEffect(() => {
     const p = getRandomFrom(problemsPool)
-    // construimos nodos xi
-    const xs = [0, 1, 2, 3].map((i) => p.x0 + i * p.h)
-    const ys = p.ys.slice(0, 4)
+    const xs = p.xs
+    const ys = p.ys
+    const targetX = p.targetX
+
+    // Calcular h (debe ser uniforme)
+    const h = xs[1] - xs[0]
 
     // tabla de diferencias hacia adelante
     const delta1 = [ys[1] - ys[0], ys[2] - ys[1], ys[3] - ys[2]]
     const delta2 = [delta1[1] - delta1[0], delta1[2] - delta1[1]]
     const delta3 = [delta2[1] - delta2[0]]
 
-    // seleccionamos un x objetivo entre x0 y x3
-    const targetX = p.x0 + p.h * (0.2 + Math.random() * 2.6)
-    const s = (targetX - xs[0]) / p.h
+    // s = (x - x0) / h
+    const s = (targetX - xs[0]) / h
 
     // calculamos coeficientes binomiales
     const binom = (sVal, k) => {
@@ -137,7 +171,6 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
     // calculamos g(x) con términos hasta donde sea necesario
     let gx = ys[0] * binom(s, 0)
     let usedTerms = 0
-    const diffs = [ys, delta1, delta2, delta3]
 
     for (let k = 1; k <= 3; k++) {
       const diffValue = k === 1 ? delta1[0] : k === 2 ? delta2[0] : delta3[0]
@@ -154,36 +187,82 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
     else requiredColor = 'yellow'
 
     setProblem({
-      ...p,
       xs,
       ys,
       delta1,
       delta2,
       delta3,
       targetX,
+      h,
       s,
       binomials: [binom(s, 0), binom(s, 1), binom(s, 2), binom(s, 3)],
       gx,
       usedTerms,
-      requiredColor
+      requiredColor,
+      description: p.description
     })
     // reset UI
     setGxInput('')
     setCutCable(null)
     setResultMessage('')
+    setGxValidated(false)
+
+    // Log solution to console
+    console.log('=== SOLUCIÓN NEWTON ADELANTE ===')
+    console.log('g(x) correcto:', gx.toFixed(8))
+    console.log('Binomial S₀:', binom(s, 0).toFixed(8))
+    console.log('Binomial S₁:', binom(s, 1).toFixed(8))
+    console.log('Binomial S₂:', binom(s, 2).toFixed(8))
+    console.log('Binomial S₃:', binom(s, 3).toFixed(8))
+    console.log('Orden utilizado:', usedTerms)
+    console.log('Cable correcto:', requiredColor.toUpperCase())
+    console.log('================================')
   }, [])
 
   const handleCutCable = (color) => {
     if (!isActive) return
     if (!problem) return
+    if (!gxValidated) {
+      setResultMessage('❌ Primero debes ingresar el valor correcto de g(x)')
+      return
+    }
 
     setCutCable(color)
 
     if (color === problem.requiredColor) {
-      setResultMessage('✅ ¡Correcto! Cortaste el cable adecuado.')
+      setResultMessage('✅ ¡Correcto! Módulo desactivado.')
       if (typeof props.onComplete === 'function') props.onComplete()
     } else {
       setResultMessage('❌ Cable incorrecto… 💥')
+      if (typeof props.onError === 'function') props.onError()
+    }
+  }
+
+  const handleGxInputChange = (e) => {
+    const value = e.target.value
+    // Limitar a 8 decimales
+    if (value.includes('.')) {
+      const [integer, decimal] = value.split('.')
+      if (decimal && decimal.length > 8) {
+        setGxInput(`${integer}.${decimal.substring(0, 8)}`)
+        return
+      }
+    }
+    setGxInput(value)
+  }
+
+  const handleValidateGx = () => {
+    if (!problem || !gxInput) return
+
+    const userValue = parseFloat(gxInput)
+    const correctValue = problem.gx
+    const tolerance = 0.000000005 // tolerancia muy pequeña para 8 decimales
+
+    if (Math.abs(userValue - correctValue) < tolerance) {
+      setGxValidated(true)
+      setResultMessage('✅ g(x) correcto. Ahora corta el cable adecuado.')
+    } else {
+      setResultMessage('❌ g(x) incorrecto… 💥')
       if (typeof props.onError === 'function') props.onError()
     }
   }
@@ -197,70 +276,31 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
       {...props}
       topic="Interpolacion"
       title="Newton hacia adelante"
-      description="Interpolación de Newton (forward). Calcula g(x) y corta el cable correcto según el orden necesario."
+      description="Interpolación de Newton (forward). Calcula g(x) y corta el cable correcto."
     >
-      {/* Instrucciones y datos */}
-      <div className={`space-y-3 rounded-lg border border-indigo-500/40 bg-indigo-500/5 p-4 mb-6 ${disabledClass}`}>
-        <p className="text-sm">
-          <span className="font-bold">Instrucciones:</span>
-          <br />
-          - Verifica que los intervalos sean uniformes (h = distancia constante entre xi).
-          <br />
-          - Calcula Δ, Δ², Δ³ (ya los mostramos).
-          <br />
-          - Calcula <span className="font-semibold">s = (x - x₀) / h</span>.
-          <br />
-          - Calcula los coeficientes binomiales y <span className="font-semibold">g(x)</span> con hasta el orden necesario.
-          <br />
-          - Según el mayor coeficiente utilizado:
-          <br />
-          &nbsp;&nbsp;• Solo S₀ → cortar cable azul.
-          <br />
-          &nbsp;&nbsp;• Usado S₁ → cortar cable verde.
-          <br />
-          &nbsp;&nbsp;• Usado S₂ → cortar cable rojo.
-          <br />
-          &nbsp;&nbsp;• Usado S₃ o más → cortar cable amarillo.
+      {/* Enunciado del problema */}
+      <div className={`rounded-lg border border-indigo-500/40 bg-indigo-500/5 p-4 mb-6 ${disabledClass}`}>
+        <p className="text-sm font-semibold text-white mb-2">
+          Obtener g(x) para x = {problem.targetX.toFixed(4)}
         </p>
-
-        <div className="text-xs text-white/70 grid grid-cols-2 gap-2">
-          <p>h = {problem.h}</p>
-          <p>Target x = {problem.targetX.toFixed(6)}</p>
-          <p>s = {problem.s.toFixed(6)}</p>
-          <p>Orden necesario = {problem.usedTerms}</p>
-        </div>
       </div>
 
       {/* Tabla de nodos y diferencias */}
       <div className={`rounded-lg border border-slate-500/30 bg-black/20 p-4 mb-6 ${disabledClass}`}>
-        <h3 className="text-sm font-semibold text-white mb-3">Tabla de valores y diferencias</h3>
+        <h3 className="text-sm font-semibold text-white mb-3">Tabla de datos</h3>
         <div className="overflow-x-auto">
-          <table className="w-full table-fixed text-xs">
+          <table className="w-full text-xs">
             <thead>
               <tr className="text-left text-white/70">
-                <th className="w-1/5 px-2 py-1">xᵢ</th>
-                <th className="w-1/5 px-2 py-1">yᵢ</th>
-                <th className="w-1/5 px-2 py-1">Δ¹</th>
-                <th className="w-1/5 px-2 py-1">Δ²</th>
-                <th className="w-1/5 px-2 py-1">Δ³</th>
+                <th className="px-3 py-2 border-b border-white/10">xᵢ</th>
+                <th className="px-3 py-2 border-b border-white/10">yᵢ</th>
               </tr>
             </thead>
             <tbody>
               {problem.xs.map((x, i) => (
-                <tr key={i} className="odd:bg-white/2">
-                  <td className="px-2 py-1">{x.toFixed(6)}</td>
-                  <td className="px-2 py-1">
-                    {problem.ys[i] !== undefined ? problem.ys[i].toFixed(6) : ''}
-                  </td>
-                  <td className="px-2 py-1">
-                    {problem.delta1[i] !== undefined ? problem.delta1[i].toFixed(6) : ''}
-                  </td>
-                  <td className="px-2 py-1">
-                    {problem.delta2[i] !== undefined ? problem.delta2[i].toFixed(6) : ''}
-                  </td>
-                  <td className="px-2 py-1">
-                    {problem.delta3[i] !== undefined ? problem.delta3[i].toFixed(6) : ''}
-                  </td>
+                <tr key={i} className="odd:bg-white/5">
+                  <td className="px-3 py-2">{x.toFixed(4)}</td>
+                  <td className="px-3 py-2">{problem.ys[i].toFixed(4)}</td>
                 </tr>
               ))}
             </tbody>
@@ -271,47 +311,52 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
       {/* Entrada y cables */}
       <div className={`grid grid-cols-2 gap-6 mb-6 ${disabledClass}`}>
         <div className="rounded-lg border border-cyan-500/30 bg-cyan-500/5 p-3">
-          <label className="block text-xs font-semibold text-cyan-300 mb-2">Ingresa tu valor de g(x):</label>
+          <label className="block text-xs font-semibold text-cyan-300 mb-2">
+            Ingresa tu valor de g(x) (8 decimales):
+          </label>
           <input
             type="number"
             step="any"
-            disabled={!isActive}
+            disabled={!isActive || gxValidated}
             className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-sm text-white outline-none focus:border-cyan-400 disabled:bg-black/20 disabled:text-white/50"
             value={gxInput}
-            onChange={(e) => setGxInput(e.target.value)}
+            onChange={handleGxInputChange}
+            placeholder="0.00000000"
           />
-          <p className="mt-2 text-xs text-white/70">
-            g(x) correcto:{' '}
-            <span className="font-mono text-emerald-300">{problem.gx.toFixed(6)}</span>
-          </p>
+          <button
+            onClick={handleValidateGx}
+            disabled={!isActive || !gxInput || gxValidated}
+            className="mt-3 w-full rounded bg-cyan-600 px-3 py-2 text-xs font-semibold text-white transition-all hover:bg-cyan-500 disabled:bg-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {gxValidated ? '✓ Validado' : 'Validar g(x)'}
+          </button>
         </div>
 
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-6">
-          <h3 className="text-sm font-semibold text-amber-600 mb-4 text-center">Corta un cable</h3>
           <div className="flex flex-col items-center gap-6">
             <CableVisual
               color="blue"
               isCut={cutCable === 'blue'}
               onClick={() => handleCutCable('blue')}
-              disabled={!isActive}
+              disabled={!isActive || !gxValidated}
             />
             <CableVisual
               color="green"
               isCut={cutCable === 'green'}
               onClick={() => handleCutCable('green')}
-              disabled={!isActive}
+              disabled={!isActive || !gxValidated}
             />
             <CableVisual
               color="red"
               isCut={cutCable === 'red'}
               onClick={() => handleCutCable('red')}
-              disabled={!isActive}
+              disabled={!isActive || !gxValidated}
             />
             <CableVisual
               color="yellow"
               isCut={cutCable === 'yellow'}
               onClick={() => handleCutCable('yellow')}
-              disabled={!isActive}
+              disabled={!isActive || !gxValidated}
             />
           </div>
         </div>
@@ -328,34 +373,6 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
           {resultMessage}
         </div>
       )}
-
-      {/* Valores oficiales */}
-      <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/70">
-        <p className="font-semibold text-white mb-1.5">Solución oficial:</p>
-        <p>
-          g(x) correcto = <span className="text-emerald-300">{problem.gx.toFixed(6)}</span>
-        </p>
-        <div className="mt-2 grid grid-cols-2 gap-2">
-          <p>
-            Binom S₀ = <span className="text-emerald-300">{problem.binomials[0].toFixed(6)}</span>
-          </p>
-          <p>
-            Binom S₁ = <span className="text-emerald-300">{problem.binomials[1].toFixed(6)}</span>
-          </p>
-          <p>
-            Binom S₂ = <span className="text-emerald-300">{problem.binomials[2].toFixed(6)}</span>
-          </p>
-          <p>
-            Binom S₃ = <span className="text-emerald-300">{problem.binomials[3].toFixed(6)}</span>
-          </p>
-        </div>
-        <p className="mt-2">
-          Orden utilizado: <span className="text-emerald-300">{problem.usedTerms}</span>
-        </p>
-        <p>
-          Cable correcto: <span className="text-emerald-300">{problem.requiredColor.toUpperCase()}</span>
-        </p>
-      </div>
     </ModuleScaffold>
   )
 }
