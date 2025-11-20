@@ -190,7 +190,7 @@ const createTimerDisplay = (timeSeconds) => {
     return mesh
 }
 
-export const useGLBScene = ({ onZoneClick, moduleStatus = {}, timerSeconds = 0 } = {}) => {
+export const useGLBScene = ({ onZoneClick, moduleStatus = {}, timerSeconds = 0, zoneModuleMap = {} } = {}) => {
     const mountRef = useRef(null)
     const containerRef = useRef(null)
     const timerMeshRef = useRef(null)
@@ -341,22 +341,7 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {}, timerSeconds = 0 }
                     setModelRef(model)
 
                     const getModuleIdFromName = (name) => {
-                        switch (name) {
-                            case 'MODULO1':
-                                return 'INTERPOLACION_LINEAL'
-                            case 'MODULO2':
-                                return 'INTERPOLACION_LAGRANGE'
-                            case 'MODULO3':
-                                return 'ECU_LINEALES_GAUSS_SEIDEL'
-                            case 'MODULO4':
-                                return 'MINIMOS_CUADRADOS_LINEA_RECTA'
-                            case 'MODULO5':
-                                return 'INTEGRACION_GENERAL'
-                            case 'MODULO6':
-                                return 'EDO_EULER_MODIFICADO'
-                            default:
-                                return null
-                        }
+                        return zoneModuleMap[name] || null
                     }
 
                     const getModuleColor = (name) => {
@@ -546,22 +531,7 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {}, timerSeconds = 0 }
         if (!modelRef) return
 
         const getModuleIdFromName = (name) => {
-            switch (name) {
-                case 'MODULO1':
-                    return 'INTERPOLACION_LINEAL'
-                case 'MODULO2':
-                    return 'INTERPOLACION_LAGRANGE'
-                case 'MODULO3':
-                    return 'ECU_LINEALES_GAUSS_SEIDEL'
-                case 'MODULO4':
-                    return 'MINIMOS_CUADRADOS_LINEA_RECTA'
-                case 'MODULO5':
-                    return 'INTEGRACION_GENERAL'
-                case 'MODULO6':
-                    return 'EDO_EULER_MODIFICADO'
-                default:
-                    return null
-            }
+            return zoneModuleMap[name] || null
         }
 
         const getModuleColor = (name) => {
@@ -592,7 +562,7 @@ export const useGLBScene = ({ onZoneClick, moduleStatus = {}, timerSeconds = 0 }
 
             child.material.color.copy(newColor)
         })
-    }, [modelRef, moduleStatus])
+    }, [modelRef, moduleStatus, zoneModuleMap])
 
     return {
         mountRef,
