@@ -5,592 +5,591 @@ import { ModuleScaffold } from '../common/ModuleScaffold'
 // Utilidades
 // -------------------------
 const getRandomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)]
-const roundToDecimal = (num, decimals = 8) => parseFloat(num.toFixed(decimals))
 
-// Pool de sistemas de ecuaciones predefinidos
-const systemsPool = [
-  {
-    name: "Sistema 1",
-    matrix: [
-      [3, -2, 1, 2],
-      [4, 3, -5, 4],
-      [2, 1, -1, 3]
-    ],
-    solution: { x: 21/16, y: 25/16, z: 19/16 }
-  },
-  {
-    name: "Sistema 2",
-    matrix: [
-      [2, 1, -1, 8],
-      [-3, -1, 2, -11],
-      [-2, 1, 2, -3]
-    ],
-    solution: { x: 2, y: 3, z: -1 }
-  },
-  {
-    name: "Sistema 3",
-    matrix: [
-      [1, 1, 1, 6],
-      [2, -1, 1, 3],
-      [1, 2, -1, 0]
-    ],
-    solution: { x: 1, y: 2, z: 3 }
-  },
-  {
-    name: "Sistema 4",
-    matrix: [
-      [2, -1, 3, 9],
-      [1, 1, 1, 6],
-      [3, -2, 1, 4]
-    ],
-    solution: { x: 2, y: 1, z: 3 }
-  },
-  {
-    name: "Sistema 5",
-    matrix: [
-      [1, -2, 3, 7],
-      [2, 1, 1, 4],
-      [-3, 2, -2, -10]
-    ],
-    solution: { x: 1, y: -1, z: 2 }
+// -------------------------
+// Componente de Cable Visual Horizontal
+// -------------------------
+const CableVisual = ({ color, isCut, onClick, disabled }) => {
+  const colorMap = {
+    blue: 'bg-blue-500',
+    green: 'bg-green-500',
+    red: 'bg-red-500'
   }
-]
 
-// Algoritmo de Montante
-const montanteMethod = (matrix) => {
-  const steps = []
-  let currentMatrix = matrix.map(row => [...row])
-  let previousPivot = 1
-  let currentPivot = null
-  
-  // Paso 0: Matriz inicial
-  steps.push({
-    stage: 0,
-    matrix: currentMatrix.map(row => [...row]),
-    previousPivot: previousPivot,
-    currentPivot: null,
-    description: "Matriz inicial"
-  })
-  
-  // Etapa 1: Primer pivote (posición 0,0)
-  currentPivot = currentMatrix[0][0]
-  const stage1Matrix = currentMatrix.map(row => [...row])
-  
-  // Calcular nuevos elementos para etapa 1
-  for (let i = 1; i < 3; i++) {
-    for (let j = 1; j < 4; j++) {
-      const newElement = (currentPivot * currentMatrix[i][j] - currentMatrix[i][0] * currentMatrix[0][j]) / previousPivot
-      stage1Matrix[i][j] = roundToDecimal(newElement)
-    }
+  const colorShadow = {
+    blue: 'rgba(59,130,246, 0.6)',
+    green: 'rgba(34,197,94, 0.6)',
+    red: 'rgba(239,68,68, 0.6)'
   }
-  
-  // Hacer ceros en columna del pivote
-  for (let i = 1; i < 3; i++) {
-    stage1Matrix[i][0] = 0
-  }
-  
-  steps.push({
-    stage: 1,
-    matrix: stage1Matrix,
-    previousPivot: previousPivot,
-    currentPivot: currentPivot,
-    description: "Etapa 1 - Pivote en posición (1,1)"
-  })
-  
-  currentMatrix = stage1Matrix
-  previousPivot = currentPivot
-  
-  // Etapa 2: Segundo pivote (posición 1,1)
-  currentPivot = currentMatrix[1][1]
-  const stage2Matrix = currentMatrix.map(row => [...row])
-  
-  // Calcular nuevos elementos para etapa 2
-  for (let i = 0; i < 3; i++) {
-    if (i === 1) continue // Saltar fila del pivote
-    
-    for (let j = 2; j < 4; j++) {
-      const newElement = (currentPivot * currentMatrix[i][j] - currentMatrix[i][1] * currentMatrix[1][j]) / previousPivot
-      stage2Matrix[i][j] = roundToDecimal(newElement)
-    }
-  }
-  
-  // Hacer ceros en columna del pivote
-  for (let i = 0; i < 3; i++) {
-    if (i !== 1) {
-      stage2Matrix[i][1] = 0
-    }
-  }
-  
-  steps.push({
-    stage: 2,
-    matrix: stage2Matrix,
-    previousPivot: previousPivot,
-    currentPivot: currentPivot,
-    description: "Etapa 2 - Pivote en posición (2,2)"
-  })
-  
-  currentMatrix = stage2Matrix
-  previousPivot = currentPivot
-  
-  // Etapa 3: Tercer pivote (posición 2,2)
-  currentPivot = currentMatrix[2][2]
-  const stage3Matrix = currentMatrix.map(row => [...row])
-  
-  // Calcular nuevos elementos para etapa 3
-  for (let i = 0; i < 2; i++) {
-    for (let j = 3; j < 4; j++) {
-      const newElement = (currentPivot * currentMatrix[i][j] - currentMatrix[i][2] * currentMatrix[2][j]) / previousPivot
-      stage3Matrix[i][j] = roundToDecimal(newElement)
-    }
-  }
-  
-  // Hacer ceros en columna del pivote
-  for (let i = 0; i < 2; i++) {
-    stage3Matrix[i][2] = 0
-  }
-  
-  steps.push({
-    stage: 3,
-    matrix: stage3Matrix,
-    previousPivot: previousPivot,
-    currentPivot: currentPivot,
-    description: "Etapa 3 - Pivote en posición (3,3)"
-  })
-  
-  currentMatrix = stage3Matrix
-  
-  // Calcular soluciones
-  const solutions = {
-    x: roundToDecimal(currentMatrix[0][3] / currentMatrix[0][0]),
-    y: roundToDecimal(currentMatrix[1][3] / currentMatrix[1][1]),
-    z: roundToDecimal(currentMatrix[2][3] / currentMatrix[2][2])
-  }
-  
-  return {
-    steps,
-    solutions,
-    pivots: [steps[1].currentPivot, steps[2].currentPivot, steps[3].currentPivot]
-  }
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="relative flex flex-col items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {/* Cable horizontal delgado */}
+      <div className="relative w-50 h-1.5 group">
+        {!isCut ? (
+          <>
+            {/* Cable intacto */}
+            <div
+              className={`absolute inset-0 rounded-full ${colorMap[color]} transition-shadow duration-300 group-hover:shadow-lg`}
+              style={{
+                boxShadow: `0 0 12px ${colorShadow[color]}`
+              }}
+            />
+            {/* Brillo en el cable */}
+            <div
+              className="absolute left-1/4 top-1/2 transform -translate-y-1/2 w-8 h-0.5 rounded-full opacity-50 blur"
+              style={{
+                background: `linear-gradient(to right, rgba(255,255,255,0.8), transparent)`
+              }}
+            />
+          </>
+        ) : (
+          <>
+            {/* Cable cortado - dos mitades separadas */}
+            <div
+              className={`absolute left-0 top-0 w-1/3 h-full ${colorMap[color]} rounded-l-full transform -translate-x-1`}
+              style={{
+                boxShadow: `0 0 10px ${colorShadow[color]}`
+              }}
+            />
+            <div
+              className={`absolute right-0 top-0 w-1/3 h-full ${colorMap[color]} rounded-r-full transform translate-x-1`}
+              style={{
+                boxShadow: `0 0 10px ${colorShadow[color]}`
+              }}
+            />
+            {/* Chispa en el centro */}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm animate-pulse">
+              ⚡
+            </div>
+          </>
+        )}
+      </div>
+    </button>
+  )
 }
 
-// -------------------------
-// Componente Principal
-// -------------------------
 export const LinealesMontanteModule = (props) => {
   const [problem, setProblem] = useState(null)
-  const [montanteResult, setMontanteResult] = useState(null)
-  const [userAnswers, setUserAnswers] = useState({})
-  const [selectedWire, setSelectedWire] = useState('')
+  const [pivot1Input, setPivot1Input] = useState('')
+  const [pivot2Input, setPivot2Input] = useState('')
+  const [pivot3Input, setPivot3Input] = useState('')
+  const [xInput, setXInput] = useState('')
+  const [yInput, setYInput] = useState('')
+  const [zInput, setZInput] = useState('')
   const [resultMessage, setResultMessage] = useState('')
-  const [showSolution, setShowSolution] = useState(false)
+  const [cutCable, setCutCable] = useState(null)
   const [isCompleted, setIsCompleted] = useState(false)
-  const [attempts, setAttempts] = useState(0)
   const isActive = props.isActive !== false
 
-  // Generar nuevo problema
+  // Pool de 10 problemas predefinidos (sistemas 3x3)
+  const problemsPool = [
+    {
+      a11: 2, a12: 1, a13: -1, b1: 8,
+      a21: -3, a22: -1, a23: 2, b2: -11,
+      a31: -2, a32: 1, a33: 2, b3: -3
+    },
+    {
+      a11: 1, a12: 2, a13: -1, b1: 1,
+      a21: 2, a22: 1, a23: 1, b2: 8,
+      a31: 1, a32: -1, a33: 2, b3: 5
+    },
+    {
+      a11: 3, a12: 2, a13: 1, b1: 10,
+      a21: 2, a22: 3, a23: 2, b2: 14,
+      a31: 1, a32: 2, a33: 3, b3: 14
+    },
+    {
+      a11: 1, a12: 1, a13: 1, b1: 6,
+      a21: 2, a22: -1, a23: 1, b2: 3,
+      a31: 1, a32: 2, a33: -1, b3: 2
+    },
+    {
+      a11: 2, a12: -1, a13: 1, b1: 5,
+      a21: 1, a22: 1, a23: -1, b2: 2,
+      a31: 3, a32: 2, a33: 1, b3: 10
+    },
+    {
+      a11: 1, a12: 2, a13: 3, b1: 14,
+      a21: 2, a22: -1, a23: 1, b2: 5,
+      a31: 3, a32: 1, a33: -2, b3: -1
+    },
+    {
+      a11: 4, a12: 1, a13: -1, b1: 4,
+      a21: 1, a22: 4, a23: -1, b2: 6,
+      a31: -1, a32: -1, a33: 5, b3: 6
+    },
+    {
+      a11: 1, a12: 1, a13: -1, b1: 2,
+      a21: 2, a22: -1, a23: 1, b2: 6,
+      a31: 1, a32: 2, a33: 2, b3: 9
+    },
+    {
+      a11: 3, a12: 1, a13: 2, b1: 11,
+      a21: 1, a22: 2, a23: 1, b2: 8,
+      a31: 2, a32: 1, a33: 3, b3: 13
+    },
+    {
+      a11: 1, a12: -1, a13: 2, b1: 7,
+      a21: 2, a22: 1, a23: -1, b2: 0,
+      a31: -1, a32: 2, a33: 1, b3: 3
+    }
+  ]
+
+  // -------------------------
+  // Generar problema aleatorio y resolver con Método de Montante
+  // -------------------------
   useEffect(() => {
-    generateNewProblem()
+    const p = getRandomFrom(problemsPool)
+
+    console.log('=== Ecuaciones Lineales - Método de Montante ===')
+    console.log('Sistema:')
+    console.log(
+      `${p.a11}x ${p.a12 >= 0 ? '+' : ''}${p.a12}y ${p.a13 >= 0 ? '+' : ''}${p.a13}z = ${p.b1}`
+    )
+    console.log(
+      `${p.a21}x ${p.a22 >= 0 ? '+' : ''}${p.a22}y ${p.a23 >= 0 ? '+' : ''}${p.a23}z = ${p.b2}`
+    )
+    console.log(
+      `${p.a31}x ${p.a32 >= 0 ? '+' : ''}${p.a32}y ${p.a33 >= 0 ? '+' : ''}${p.a33}z = ${p.b3}`
+    )
+
+    // Matriz aumentada inicial
+    let matrix = [
+      [p.a11, p.a12, p.a13, p.b1],
+      [p.a21, p.a22, p.a23, p.b2],
+      [p.a31, p.a32, p.a33, p.b3]
+    ]
+
+    console.log('\nMatriz aumentada inicial:')
+    console.log(matrix)
+
+    // p(0) = 1
+    let prevPivot = 1
+    const pivots = []
+
+    // Etapa k=1: Pivote = a11
+    let pivot = matrix[0][0]
+    pivots.push(pivot)
+    console.log(`\nEtapa k=1: Pivote = ${pivot}`)
+
+    let newMatrix = [
+      [matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3]],
+      [0, 0, 0, 0],
+      [0, 0, 0, 0]
+    ]
+
+    // Transformar fila 2
+    for (let j = 0; j < 4; j++) {
+      newMatrix[1][j] = (pivot * matrix[1][j] - matrix[1][0] * matrix[0][j]) / prevPivot
+    }
+
+    // Transformar fila 3
+    for (let j = 0; j < 4; j++) {
+      newMatrix[2][j] = (pivot * matrix[2][j] - matrix[2][0] * matrix[0][j]) / prevPivot
+    }
+
+    matrix = newMatrix
+    prevPivot = pivot
+    console.log('Matriz después de etapa 1:')
+    console.log(matrix)
+
+    // Etapa k=2: Pivote = a22
+    pivot = matrix[1][1]
+    pivots.push(pivot)
+    console.log(`\nEtapa k=2: Pivote = ${pivot}`)
+
+    newMatrix = [
+      [matrix[0][0], matrix[0][1], matrix[0][2], matrix[0][3]],
+      [matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3]],
+      [0, 0, 0, 0]
+    ]
+
+    // Transformar fila 1
+    for (let j = 0; j < 4; j++) {
+      newMatrix[0][j] = (pivot * matrix[0][j] - matrix[0][1] * matrix[1][j]) / prevPivot
+    }
+
+    // Transformar fila 3
+    for (let j = 0; j < 4; j++) {
+      newMatrix[2][j] = (pivot * matrix[2][j] - matrix[2][1] * matrix[1][j]) / prevPivot
+    }
+
+    matrix = newMatrix
+    prevPivot = pivot
+    console.log('Matriz después de etapa 2:')
+    console.log(matrix)
+
+    // Etapa k=3: Pivote = a33
+    pivot = matrix[2][2]
+    pivots.push(pivot)
+    console.log(`\nEtapa k=3: Pivote = ${pivot}`)
+
+    newMatrix = [
+      [0, 0, 0, 0],
+      [matrix[1][0], matrix[1][1], matrix[1][2], matrix[1][3]],
+      [matrix[2][0], matrix[2][1], matrix[2][2], matrix[2][3]]
+    ]
+
+    // Transformar fila 1
+    for (let j = 0; j < 4; j++) {
+      newMatrix[0][j] = (pivot * matrix[0][j] - matrix[0][2] * matrix[2][j]) / prevPivot
+    }
+
+    // Transformar fila 2
+    for (let j = 0; j < 4; j++) {
+      newMatrix[1][j] = (pivot * matrix[1][j] - matrix[1][2] * matrix[2][j]) / prevPivot
+    }
+
+    matrix = newMatrix
+    console.log('Matriz final:')
+    console.log(matrix)
+
+    // Extraer soluciones
+    const x = matrix[0][3] / matrix[0][0]
+    const y = matrix[1][3] / matrix[1][1]
+    const z = matrix[2][3] / matrix[2][2]
+
+    console.log('\n=== Resultado Final ===')
+    console.log('x =', x)
+    console.log('y =', y)
+    console.log('z =', z)
+    console.log('Pivotes:', pivots)
+
+    // Determinar cable correcto
+    let negativeCount = 0
+    if (x < 0) negativeCount++
+    if (y < 0) negativeCount++
+    if (z < 0) negativeCount++
+
+    let correctColor = ''
+    if (negativeCount === 0) correctColor = 'blue'
+    else if (negativeCount === 1) correctColor = 'green'
+    else correctColor = 'red'
+
+    console.log('Negativos =', negativeCount)
+    console.log('Cable =', correctColor)
+
+    setProblem({
+      ...p,
+      pivot1: pivots[0],
+      pivot2: pivots[1],
+      pivot3: pivots[2],
+      x,
+      y,
+      z,
+      negativeCount,
+      correctColor
+    })
+
+    setPivot1Input('')
+    setPivot2Input('')
+    setPivot3Input('')
+    setXInput('')
+    setYInput('')
+    setZInput('')
+    setResultMessage('')
+    setCutCable(null)
   }, [])
 
-  const generateNewProblem = () => {
-    const selectedSystem = getRandomFrom(systemsPool)
-    const result = montanteMethod(selectedSystem.matrix)
-    
-    setProblem({
-      system: selectedSystem,
-      matrix: selectedSystem.matrix
-    })
-    
-    setMontanteResult(result)
-    
-    setUserAnswers({
-      pivot1: '',
-      pivot2: '',
-      pivot3: '',
-      x: '',
-      y: '',
-      z: ''
-    })
-    setSelectedWire('')
-    setResultMessage('')
-    setShowSolution(false)
-    setIsCompleted(false)
-  }
+  const handleInputChange = (setter) => (e) => {
+    const value = e.target.value
 
-  const handleInputChange = (field, value) => {
-    if (!isActive || isCompleted) return
-    
-    // Limitar a 8 decimales
-    let processedValue = value
+    if (value === '-') {
+      setter(value)
+      return
+    }
+
     if (value.includes('.')) {
       const [integer, decimal] = value.split('.')
       if (decimal && decimal.length > 8) {
-        processedValue = `${integer}.${decimal.substring(0, 8)}`
+        setter(`${integer}.${decimal.substring(0, 8)}`)
+        return
       }
     }
-    
-    setUserAnswers(prev => ({
-      ...prev,
-      [field]: processedValue
-    }))
+    setter(value)
   }
 
-  const handleWireSelect = (wire) => {
+  const handleCutCable = (color) => {
     if (!isActive || isCompleted) return
-    setSelectedWire(wire)
-  }
 
-  const countNegativeSolutions = (solutions) => {
-    let count = 0
-    if (solutions.x < 0) count++
-    if (solutions.y < 0) count++
-    if (solutions.z < 0) count++
-    return count
-  }
-
-  const handleVerify = () => {
-    if (!isActive || isCompleted) return
-    
-    const { solutions, pivots } = montanteResult
-    const { pivot1, pivot2, pivot3, x, y, z } = userAnswers
-    
-    // Validar respuestas con tolerancia
-    const tolerance = 0.0001
-    
-    const isPivot1Correct = Math.abs(parseFloat(pivot1) - pivots[0]) < tolerance
-    const isPivot2Correct = Math.abs(parseFloat(pivot2) - pivots[1]) < tolerance
-    const isPivot3Correct = Math.abs(parseFloat(pivot3) - pivots[2]) < tolerance
-    const isXCorrect = Math.abs(parseFloat(x) - solutions.x) < tolerance
-    const isYCorrect = Math.abs(parseFloat(y) - solutions.y) < tolerance
-    const isZCorrect = Math.abs(parseFloat(z) - solutions.z) < tolerance
-    
-    // Validar cable seleccionado basado en número de soluciones negativas
-    const negativeCount = countNegativeSolutions(solutions)
-    let isWireCorrect = false
-    
-    switch (selectedWire) {
-      case 'blue':
-        isWireCorrect = negativeCount === 0
-        break
-      case 'green':
-        isWireCorrect = negativeCount === 1
-        break
-      case 'red':
-        isWireCorrect = negativeCount >= 2
-        break
-      default:
-        isWireCorrect = false
+    if (
+      !pivot1Input.trim() ||
+      !pivot2Input.trim() ||
+      !pivot3Input.trim() ||
+      !xInput.trim() ||
+      !yInput.trim() ||
+      !zInput.trim()
+    ) {
+      setResultMessage('❌ Ingresa todos los valores primero')
+      return
     }
-    
-    const allCorrect = isPivot1Correct && isPivot2Correct && isPivot3Correct && 
-                      isXCorrect && isYCorrect && isZCorrect && isWireCorrect
-    
-    if (allCorrect) {
-      setResultMessage('✅ ¡Módulo completado!')
+
+    const pivot1Num = parseFloat(pivot1Input)
+    const pivot2Num = parseFloat(pivot2Input)
+    const pivot3Num = parseFloat(pivot3Input)
+    const xNum = parseFloat(xInput)
+    const yNum = parseFloat(yInput)
+    const zNum = parseFloat(zInput)
+
+    if (
+      isNaN(pivot1Num) ||
+      isNaN(pivot2Num) ||
+      isNaN(pivot3Num) ||
+      isNaN(xNum) ||
+      isNaN(yNum) ||
+      isNaN(zNum)
+    ) {
+      setResultMessage('❌ Ingresa valores válidos')
+      return
+    }
+
+    setCutCable(color)
+
+    if (!problem) return
+
+    // Validación con precisión de 8 decimales
+    const isPivot1Correct = Math.abs(pivot1Num - problem.pivot1) < 0.00000001
+    const isPivot2Correct = Math.abs(pivot2Num - problem.pivot2) < 0.00000001
+    const isPivot3Correct = Math.abs(pivot3Num - problem.pivot3) < 0.00000001
+    const isXCorrect = Math.abs(xNum - problem.x) < 0.00000001
+    const isYCorrect = Math.abs(yNum - problem.y) < 0.00000001
+    const isZCorrect = Math.abs(zNum - problem.z) < 0.00000001
+
+    if (!isPivot1Correct || !isPivot2Correct || !isPivot3Correct) {
+      setResultMessage('❌ Los pivotes son incorrectos')
+      props.onError?.()
+      return
+    }
+
+    if (!isXCorrect || !isYCorrect || !isZCorrect) {
+      setResultMessage('❌ Los valores de x, y o z son incorrectos')
+      props.onError?.()
+      return
+    }
+
+    if (color === problem.correctColor) {
+      setResultMessage('✅ ¡Correcto! Cortaste el cable adecuado.')
       setIsCompleted(true)
+      props.onComplete?.()
     } else {
-      const newAttempts = attempts + 1
-      setAttempts(newAttempts)
-      
-      if (newAttempts >= 2) {
-        setResultMessage('❌ Game Over - Se han agotado los intentos')
-        props.onError?.()
-        setShowSolution(true)
-      } else {
-        setResultMessage('❌ Revisa tus cálculos')
-        setShowSolution(true)
-      }
+      setResultMessage('❌ Cable incorrecto… 💥')
+      props.onError?.()
     }
   }
 
-  const allFieldsFilled = userAnswers.pivot1 && userAnswers.pivot2 && userAnswers.pivot3 && 
-                         userAnswers.x && userAnswers.y && userAnswers.z && 
-                         selectedWire
-
-  if (!problem || !montanteResult) {
-    return <p className="text-center">Generando problema...</p>
+  const handleComplete = () => {
+    if (typeof props.onComplete === 'function') {
+      props.onComplete()
+    }
   }
 
-  const { system, matrix } = problem
-  const { steps, solutions, pivots } = montanteResult
-  const negativeCount = countNegativeSolutions(solutions)
+  if (!problem) return <p className="text-center">Generando problema...</p>
+
+  const disabledClass = !isActive ? 'opacity-50 cursor-not-allowed' : ''
+  const cablesDisabled =
+    !isActive ||
+    !pivot1Input.trim() ||
+    !pivot2Input.trim() ||
+    !pivot3Input.trim() ||
+    !xInput.trim() ||
+    !yInput.trim() ||
+    !zInput.trim() ||
+    isCompleted
 
   return (
     <ModuleScaffold
       {...props}
       topic="Ecuaciones lineales"
       title="Método de Montante"
-      description="Resuelve el sistema de ecuaciones usando el método de Montante"
+      description="Resuelve el sistema de ecuaciones usando el método de Montante."
     >
-      <div className="space-y-6">
-        {/* Sistema de ecuaciones */}
-        <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/5 p-4">
-          <div className="text-sm text-center font-bold text-yellow-300 mb-4">
-            {system.name}
-          </div>
-          <div className="text-center text-white/80 text-sm space-y-2">
-            <div>Ecuación 1: {matrix[0][0]}x {matrix[0][1] >= 0 ? '+' : ''} {matrix[0][1]}y {matrix[0][2] >= 0 ? '+' : ''} {matrix[0][2]}z = {matrix[0][3]}</div>
-            <div>Ecuación 2: {matrix[1][0]}x {matrix[1][1] >= 0 ? '+' : ''} {matrix[1][1]}y {matrix[1][2] >= 0 ? '+' : ''} {matrix[1][2]}z = {matrix[1][3]}</div>
-            <div>Ecuación 3: {matrix[2][0]}x {matrix[2][1] >= 0 ? '+' : ''} {matrix[2][1]}y {matrix[2][2] >= 0 ? '+' : ''} {matrix[2][2]}z = {matrix[2][3]}</div>
-          </div>
+      {/* Problema */}
+      <div
+        className={`space-y-4 rounded-lg border border-yellow-500/50 bg-yellow-500/5 p-4 mb-6 ${disabledClass}`}
+      >
+        <p className="text-sm font-bold">Método de Montante</p>
+
+        <div className="text-xs text-white/70 font-mono">
+          <p>
+            {problem.a11}x {problem.a12 >= 0 ? '+' : ''}
+            {problem.a12}y {problem.a13 >= 0 ? '+' : ''}
+            {problem.a13}z = {problem.b1}
+          </p>
+          <p>
+            {problem.a21}x {problem.a22 >= 0 ? '+' : ''}
+            {problem.a22}y {problem.a23 >= 0 ? '+' : ''}
+            {problem.a23}z = {problem.b2}
+          </p>
+          <p>
+            {problem.a31}x {problem.a32 >= 0 ? '+' : ''}
+            {problem.a32}y {problem.a33 >= 0 ? '+' : ''}
+            {problem.a33}z = {problem.b3}
+          </p>
+          <p className="mt-2">p⁽⁰⁾ = 1</p>
         </div>
+      </div>
 
-        {/* Matriz aumentada inicial */}
-        <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
-          <div className="text-sm text-center font-bold text-blue-300 mb-3">
-            Matriz Aumentada Inicial
-          </div>
-          <div className="flex justify-center">
-            <div className="text-sm font-mono bg-black/30 p-3 rounded border border-white/20">
-              <div className="flex space-x-4">
-                <div className="text-right">
-                  <div>[{matrix[0][0]}</div>
-                  <div>[{matrix[1][0]}</div>
-                  <div>[{matrix[2][0]}</div>
-                </div>
-                <div className="text-right">
-                  <div>{matrix[0][1]}</div>
-                  <div>{matrix[1][1]}</div>
-                  <div>{matrix[2][1]}</div>
-                </div>
-                <div className="text-right border-r border-white/20 pr-4">
-                  <div>{matrix[0][2]}</div>
-                  <div>{matrix[1][2]}</div>
-                  <div>{matrix[2][2]}</div>
-                </div>
-                <div className="text-right pl-4">
-                  <div>| {matrix[0][3]}]</div>
-                  <div>| {matrix[1][3]}]</div>
-                  <div>| {matrix[2][3]}]</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className="text-center text-white/60 text-xs mt-2">
-            Pivote anterior inicial: p⁽⁰⁾ = 1
-          </div>
-        </div>
-
-        {/* Inputs para pivotes y soluciones */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="text-center font-bold text-green-300 mb-2">
-              Pivotes del Método
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">Pivote 1 (etapa 1):</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-green-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.pivot1}
-                  onChange={(e) => handleInputChange('pivot1', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">Pivote 2 (etapa 2):</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-green-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.pivot2}
-                  onChange={(e) => handleInputChange('pivot2', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">Pivote 3 (etapa 3):</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-green-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.pivot3}
-                  onChange={(e) => handleInputChange('pivot3', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
+      {/* Ejercicio y Cables */}
+      <div className={`grid grid-cols-2 gap-6 mb-6 ${disabledClass}`}>
+        {/* Entrada de valores */}
+        <div className="space-y-3">
+          <div className="rounded-lg border border-blue-500/50 bg-blue-500/5 p-3">
+            <label className="block text-xs font-semibold text-blue-300 mb-2">Pivotes:</label>
+            <div className="space-y-2">
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-blue-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={pivot1Input}
+                onChange={handleInputChange(setPivot1Input)}
+                placeholder="Pivote 1 (k=1)"
+              />
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-blue-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={pivot2Input}
+                onChange={handleInputChange(setPivot2Input)}
+                placeholder="Pivote 2 (k=2)"
+              />
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-blue-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={pivot3Input}
+                onChange={handleInputChange(setPivot3Input)}
+                placeholder="Pivote 3 (k=3)"
+              />
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="text-center font-bold text-purple-300 mb-2">
-              Soluciones
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">x:</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.x}
-                  onChange={(e) => handleInputChange('x', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">y:</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.y}
-                  onChange={(e) => handleInputChange('y', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">z:</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.z}
-                  onChange={(e) => handleInputChange('z', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
+          <div className="rounded-lg border border-purple-500/50 bg-purple-500/5 p-3">
+            <label className="block text-xs font-semibold text-purple-300 mb-2">
+              Resultados:
+            </label>
+            <div className="space-y-2">
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={xInput}
+                onChange={handleInputChange(setXInput)}
+                placeholder="x = 0.00000000"
+              />
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={yInput}
+                onChange={handleInputChange(setYInput)}
+                placeholder="y = 0.00000000"
+              />
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={zInput}
+                onChange={handleInputChange(setZInput)}
+                placeholder="z = 0.00000000"
+              />
             </div>
           </div>
         </div>
 
-        {/* Información de selección de cable */}
-        <div className="rounded-lg border border-red-500/30 bg-red-500/5 p-4">
-          <div className="text-center font-bold text-red-300 mb-2">
-            Selección del Cable
-          </div>
-          <div className="text-sm text-white/80 space-y-2 text-center">
-            <p>Basado en el <strong>número de soluciones negativas</strong>:</p>
-            <div className="grid grid-cols-3 gap-2 text-xs">
-              <div className="text-blue-300">• 0 negativas: Cable AZUL</div>
-              <div className="text-green-300">• 1 negativa: Cable VERDE</div>
-              <div className="text-red-300">• 2+ negativas: Cable ROJO</div>
-            </div>
-            <div className="text-yellow-300 text-xs mt-2">
-              Soluciones negativas en este problema: <strong>{negativeCount}</strong>
-            </div>
-          </div>
-        </div>
+        {/* Caja de cables */}
+        <div className="rounded-lg border border-red-500/50 bg-red-500/5 p-6">
+          <h3 className="text-sm font-semibold text-red-300 mb-4 text-center">Corta un cable</h3>
 
-        {/* Selección de cable */}
-        <div className="space-y-4">
-          <div className="text-center font-bold text-red-300 mb-2">
-            Selecciona el cable según el número de soluciones negativas
-          </div>
-          
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              onClick={() => handleWireSelect('blue')}
-              disabled={!isActive || isCompleted}
-              className={`py-3 rounded border-2 font-semibold transition-all ${
-                selectedWire === 'blue'
-                  ? 'bg-blue-600 border-blue-400 text-white'
-                  : 'bg-blue-900/30 border-blue-700 text-blue-300 hover:bg-blue-800/40'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              Azul (0 negativas)
-            </button>
-            
-            <button
-              onClick={() => handleWireSelect('green')}
-              disabled={!isActive || isCompleted}
-              className={`py-3 rounded border-2 font-semibold transition-all ${
-                selectedWire === 'green'
-                  ? 'bg-green-600 border-green-400 text-white'
-                  : 'bg-green-900/30 border-green-700 text-green-300 hover:bg-green-800/40'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              Verde (1 negativa)
-            </button>
-            
-            <button
-              onClick={() => handleWireSelect('red')}
-              disabled={!isActive || isCompleted}
-              className={`py-3 rounded border-2 font-semibold transition-all ${
-                selectedWire === 'red'
-                  ? 'bg-red-600 border-red-400 text-white'
-                  : 'bg-red-900/30 border-red-700 text-red-300 hover:bg-red-800/40'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              Rojo (2+ negativas)
-            </button>
-          </div>
-        </div>
+          <div className="flex flex-col items-center gap-10">
+            <CableVisual
+              color="blue"
+              isCut={cutCable === 'blue'}
+              onClick={() => handleCutCable('blue')}
+              disabled={cablesDisabled}
+            />
 
-        {/* Botón de verificación */}
-        {!isCompleted && allFieldsFilled && (
-          <div className="flex justify-center">
-            <button
-              onClick={handleVerify}
-              disabled={!isActive}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-semibold transition-colors"
-            >
-              Verificar Solución
-            </button>
-          </div>
-        )}
+            <CableVisual
+              color="green"
+              isCut={cutCable === 'green'}
+              onClick={() => handleCutCable('green')}
+              disabled={cablesDisabled}
+            />
 
-        {resultMessage && (
-          <div
-            className={`p-4 text-center text-sm font-bold rounded-lg ${
-              resultMessage.includes('✅')
-                ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
-                : resultMessage.includes('Game Over')
-                ? 'bg-red-600/40 border border-red-500/60 text-red-200'
-                : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
-            }`}
-          >
-            {resultMessage}
-            {isCompleted && (
-              <div className="mt-2">
-                <button
-                  onClick={() => props.onComplete && props.onComplete()}
-                  className="px-4 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors"
-                >
-                  Cerrar Módulo
-                </button>
+            <CableVisual
+              color="red"
+              isCut={cutCable === 'red'}
+              onClick={() => handleCutCable('red')}
+              disabled={cablesDisabled}
+            />
+          </div>
+
+          {(!pivot1Input.trim() ||
+            !pivot2Input.trim() ||
+            !pivot3Input.trim() ||
+            !xInput.trim() ||
+            !yInput.trim() ||
+            !zInput.trim()) && (
+              <div className="text-xs text-center text-red-300/70 mt-4">
+                Ingresa todos los valores para activar los cables
               </div>
             )}
-          </div>
-        )}
-
-        {/* Solución en caso de error */}
-        {showSolution && problem && !isCompleted && (
-          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
-            <div className="text-sm text-center text-emerald-300 mb-3 font-bold">
-              SOLUCIÓN CORRECTA
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="space-y-1">
-                <div className="text-emerald-200">Pivotes:</div>
-                <div className="font-mono">Pivote 1: {pivots[0]}</div>
-                <div className="font-mono">Pivote 2: {pivots[1]}</div>
-                <div className="font-mono">Pivote 3: {pivots[2]}</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-emerald-200">Soluciones:</div>
-                <div className="font-mono">x = {solutions.x}</div>
-                <div className="font-mono">y = {solutions.y}</div>
-                <div className="font-mono">z = {solutions.z}</div>
-                <div className="text-yellow-300">
-                  Cable correcto: {
-                    negativeCount === 0 ? 'AZUL' :
-                    negativeCount === 1 ? 'VERDE' : 'ROJO'
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        </div>
       </div>
+
+      {/* Resultado */}
+      {resultMessage && (
+        <div
+          className={`p-3 text-center text-sm font-bold rounded-lg mb-6 ${resultMessage.includes('Correcto')
+              ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+              : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+            }`}
+        >
+          {resultMessage}
+          {isCompleted && (
+            <div className="mt-2">
+              <button
+                onClick={handleComplete}
+                className="px-4 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors"
+              >
+                Cerrar Módulo
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Solución (solo al completar) */}
+      {isCompleted && (
+        <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/70">
+          <p className="font-semibold text-white mb-1.5">Solución oficial:</p>
+          <p>
+            Pivote 1 = <span className="text-emerald-300">{problem.pivot1}</span>
+          </p>
+          <p>
+            Pivote 2 = <span className="text-emerald-300">{problem.pivot2}</span>
+          </p>
+          <p>
+            Pivote 3 = <span className="text-emerald-300">{problem.pivot3}</span>
+          </p>
+          <p className="mt-2">
+            x = <span className="text-emerald-300">{problem.x.toFixed(8)}</span>
+          </p>
+          <p>
+            y = <span className="text-emerald-300">{problem.y.toFixed(8)}</span>
+          </p>
+          <p>
+            z = <span className="text-emerald-300">{problem.z.toFixed(8)}</span>
+          </p>
+          <p className="mt-2">
+            Valores negativos = <span className="text-emerald-300">{problem.negativeCount}</span>
+          </p>
+        </div>
+      )}
     </ModuleScaffold>
   )
 }
