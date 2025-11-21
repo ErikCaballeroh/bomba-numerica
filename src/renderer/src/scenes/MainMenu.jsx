@@ -35,13 +35,13 @@ export default function MainMenu() {
                     animate="animate"
                     className="text-7xl md:text-9xl font-extrabold mb-16 tracking-wider text-white h-auto md:h-[200px]"
                 >
-                    Bomba Numerica
+                    Bomba Numérica
                 </motion.h1>
 
                 {/* Contenedor principal */}
                 <div className="w-full max-w-lg bg-neutral-900/80 backdrop-blur-sm border border-neutral-600 rounded-xl p-10 shadow-2xl flex flex-col gap-10 mx-4">
                     <Button onClick={goLevels}>Jugar</Button>
-                    <Button>Creditos</Button>
+                    <Button>Créditos</Button>
                     <Button onClick={handleExit}>Salir</Button>
                 </div>
             </div>

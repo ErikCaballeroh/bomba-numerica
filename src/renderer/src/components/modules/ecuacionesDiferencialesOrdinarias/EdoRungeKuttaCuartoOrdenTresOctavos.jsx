@@ -1,6 +1,6 @@
 import { ModuleScaffold } from '../common/ModuleScaffold'
 
-export const EdoRungeKuttaCuartoOrdenModule = (props) => (
+export const EdoRungeKuttaCuartoOrdenTresOctavosModule = (props) => (
   <ModuleScaffold
     {...props}
     topic="EDO"
