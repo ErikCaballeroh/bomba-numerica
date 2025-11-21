@@ -55,6 +55,11 @@ export const BombScene = () => {
         const selectedModules = selectRandomModules(topicId)
         const totalTime = calculateTotalTime(topicId)
 
+        // Debug: Verificar qué módulos se están seleccionando
+        console.log('🎯 Nivel:', levelId)
+        console.log('🎯 Tema:', topicId)
+        console.log('🎯 Módulos seleccionados:', selectedModules.map(m => m.id))
+
         // Crear mapeo de zonas a módulos (MODULO1, MODULO2, MODULO3)
         const zoneModuleMap = {}
         selectedModules.forEach((module, index) => {
@@ -90,6 +95,19 @@ export const BombScene = () => {
 
     const [timeLeft, setTimeLeft] = useState(levelConfig.totalTime)
     const [isTimerActive, setIsTimerActive] = useState(true)
+
+    // Sincronizar estados cuando cambia el levelConfig (cambio de nivel)
+    useEffect(() => {
+        setMiniGamesStatus(levelConfig.initialModuleStatus)
+        setTimeLeft(levelConfig.totalTime)
+        setActiveMiniGame(null)
+        setModuleErrors({})
+        setHasWon(false)
+        setHasLost(false)
+        setLossReason(null)
+        setCompletionTime(null)
+        setIsTimerActive(true)
+    }, [levelConfig])
 
     const completedModules = Object.values(miniGamesStatus).filter(Boolean).length
     const totalModules = levelConfig.trackedModules.length
