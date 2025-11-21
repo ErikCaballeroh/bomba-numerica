@@ -140,7 +140,8 @@ export const MODULE_TOPICS = [
       { id: 'EDO_EULER_MODIFICADO', title: 'Euler modificado' },
       { id: 'EDO_RUNGE_KUTTA_SEGUNDO_ORDEN', title: 'Runge-Kutta segundo orden' },
       { id: 'EDO_RUNGE_KUTTA_TERCER_ORDEN', title: 'Runge-Kutta tercer orden' },
-      { id: 'EDO_RUNGE_KUTTA_CUARTO_ORDEN', title: 'Runge-Kutta cuarto orden' },
+      { id: 'EDO_RUNGE_KUTTA_CUARTO_ORDEN_UN_TERCIO', title: 'Runge-Kutta cuarto orden (1/3 Simpson)' },
+      { id: 'EDO_RUNGE_KUTTA_CUARTO_ORDEN_TRES_OCTAVOS', title: 'Runge-Kutta cuarto orden (3/8 Simpson)' },
       { id: 'EDO_RUNGE_KUTTA_ORDEN_SUPERIOR', title: 'Runge-Kutta orden superior' }
     ]
   }
