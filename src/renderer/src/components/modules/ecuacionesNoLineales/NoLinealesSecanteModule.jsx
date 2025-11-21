@@ -6,20 +6,13 @@ import { ModuleScaffold } from '../common/ModuleScaffold'
 // -------------------------
 const getRandomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)]
 
-// -------------------------
-// Componente de Cable Visual (MISMO que Lagrange)
-// -------------------------
+// Cable visual simplificado
 const CableVisual = ({ color, isCut, onClick, disabled }) => {
   const colorMap = {
+    red: 'bg-red-500',
     blue: 'bg-blue-500',
     green: 'bg-green-500'
   }
-
-  const colorShadow = {
-    blue: 'rgba(59,130,246, 0.6)',
-    green: 'rgba(34,197,94, 0.6)'
-  }
-
   return (
     <button
       onClick={onClick}
@@ -30,9 +23,6 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
         {!isCut ? (
           <div
             className={`absolute inset-0 rounded-full ${colorMap[color]} transition-all duration-300 group-hover:shadow-lg`}
-            style={{
-              boxShadow: `0 0 8px ${colorShadow[color]}`
-            }}
           />
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-between py-2">
@@ -46,59 +36,35 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
   )
 }
 
-// Algoritmo de la Secante
+const round8 = (value) => Number(Number(value).toFixed(8))
+
+// Método de la secante adaptado al manual (redondeo y almacenamiento de xi/error)
 const secantMethod = (func, x0, x1, tolerance = 0.001, maxIterations = 50) => {
   const iterations = []
-  let currentX0 = x0
-  let currentX1 = x1
-  let prevX = null
-  
-  // Iteración 0
-  iterations.push({
-    iteration: 0,
-    xi: currentX0,
-    error: null
-  })
-  
-  // Iteración 1
-  iterations.push({
-    iteration: 1,
-    xi: currentX1,
-    error: Math.abs(currentX1 - currentX0)
-  })
-  
-  prevX = currentX1
-  
-  for (let i = 2; i < maxIterations; i++) {
-    const f0 = func(currentX0)
-    const f1 = func(currentX1)
-    
-    // Evitar división por cero
-    if (Math.abs(f1 - f0) < 1e-15) {
-      break
-    }
-    
-    // Calcular siguiente x usando fórmula de la secante
-    const nextX = currentX1 - (f1 * (currentX1 - currentX0)) / (f1 - f0)
-    const error = Math.abs(nextX - prevX)
-    
+  let prev = x0
+  let curr = x1
+
+  iterations.push({ xi: round8(prev), error: null })
+  iterations.push({ xi: round8(curr), error: round8(Math.abs(curr - prev)) })
+
+  for (let i = 2; i <= maxIterations; i++) {
+    const f0 = func(prev)
+    const f1 = func(curr)
+    if (Math.abs(f1 - f0) < 1e-15) break
+
+    const nextX = curr - f1 * (curr - prev) / (f1 - f0)
+    const error = Math.abs(nextX - curr)
+
     iterations.push({
-      iteration: i,
-      xi: nextX,
-      error: error
+      xi: round8(nextX),
+      error: round8(error)
     })
-    
-    // Verificar convergencia
-    if (error < tolerance) {
-      break
-    }
-    
-    // Actualizar para siguiente iteración
-    currentX0 = currentX1
-    currentX1 = nextX
-    prevX = nextX
+
+    if (error <= tolerance) break
+    prev = curr
+    curr = nextX
   }
-  
+
   return iterations
 }
 
@@ -145,26 +111,20 @@ export const NoLinealesSecanteModule = (props) => {
 
   // Generar problema aleatorio
   useEffect(() => {
-    const selectedProblem = getRandomFrom(problemsPool)
-    const iterations = secantMethod(
-      selectedProblem.function,
-      selectedProblem.x0,
-      selectedProblem.x1,
-      selectedProblem.tolerance
-    )
-    
-    const lastIteration = iterations[iterations.length - 1]
-    const totalIterations = iterations.length
-    
+    const selected = getRandomFrom(problemsPool)
+    const iter = secantMethod(selected.function, selected.x0, selected.x1, selected.tolerance)
+
+    const last = iter[iter.length - 1]
+    const secondLast = iter[iter.length - 2]
+
     setProblem({
-      ...selectedProblem,
-      iterations,
-      lastIteration,
-      totalIterations,
-      correctXi: lastIteration.xi,
-      correctError: lastIteration.error
+      ...selected,
+      iterations: iter,
+      lastXi: last.xi,
+      correctError: secondLast.error, // el manual usa el último error no nulo
+      totalIterations: iter.length - 1
     })
-    
+
     setLastXi('')
     setLastError('')
     setCutCable(null)
@@ -195,29 +155,28 @@ export const NoLinealesSecanteModule = (props) => {
 
     const lastXiNum = parseFloat(lastXi)
     const lastErrorNum = parseFloat(lastError)
-    
+
     if (isNaN(lastXiNum) || isNaN(lastErrorNum)) {
       setResultMessage('❌ Ingresa valores válidos')
       return
     }
 
     setCutCable(color)
-    
-    // ✅ PRECISIÓN DE 8 DECIMALES para las soluciones
-    const solutionsCorrect = 
-      Math.abs(lastXiNum - problem.correctXi) < 0.00000001 &&
-      Math.abs(lastErrorNum - problem.correctError) < 0.00000001
 
-    if (solutionsCorrect) {
-      // ✅ LÓGICA DE CABLES SEGÚN MANUAL: Basado en número de iteraciones
+    // Comparar redondeado a 8 decimales con los valores del problema
+    const correctXiOk = round8(parseFloat(lastXi)) === round8(problem.lastXi)
+    const correctErrOk = round8(parseFloat(lastError)) === round8(problem.correctError)
+
+    if (correctXiOk && correctErrOk) {
+      // ✅ LÓGICA DE CABLES SEGÚN MANUAL CORREGIDA
       let correctColor = ''
       
       if (problem.totalIterations >= 0 && problem.totalIterations <= 4) {
-        correctColor = 'green'
+        correctColor = 'green' // 0-4 iteraciones = VERDE
       } else if (problem.totalIterations >= 5 && problem.totalIterations <= 9) {
-        correctColor = 'blue' // Rojo en manual, pero usamos azul (solo tenemos azul/verde)
+        correctColor = 'red' // 5-9 iteraciones = ROJO
       } else {
-        correctColor = 'blue'
+        correctColor = 'blue' // 10+ iteraciones = AZUL
       }
       
       if (color === correctColor) {
@@ -225,7 +184,7 @@ export const NoLinealesSecanteModule = (props) => {
         setIsCompleted(true)
         props.onComplete?.()
       } else {
-        setResultMessage('❌ Cable incorrecto')
+        setResultMessage(`❌ Cable incorrecto - Debe ser ${correctColor.toUpperCase()}`)
         props.onError?.()
       }
     } else {
@@ -326,24 +285,30 @@ export const NoLinealesSecanteModule = (props) => {
           )}
         </div>
 
-        {/* Panel derecho: Cables */}
-        <div className={`w-48 rounded-lg border border-red-500/50 bg-red-900/20 p-6 ${disabledClass} flex flex-col`}>
+        {/* Panel derecho: Cables (ACTUALIZADO con 3 cables) */}
+        <div className={`w-64 rounded-lg border border-red-500/50 bg-red-900/20 p-6 ${disabledClass} flex flex-col`}>
           <div className="text-sm text-red-300 text-center mb-6 font-bold">
             SELECCIONAR CABLE
           </div>
           
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex gap-12">
-              <CableVisual
-                color="blue"
-                isCut={cutCable === 'blue'}
-                onClick={() => handleCutCable('blue')}
-                disabled={cablesDisabled}
-              />
+            <div className="flex gap-8">
               <CableVisual
                 color="green"
                 isCut={cutCable === 'green'}
                 onClick={() => handleCutCable('green')}
+                disabled={cablesDisabled}
+              />
+              <CableVisual
+                color="red"
+                isCut={cutCable === 'red'}
+                onClick={() => handleCutCable('red')}
+                disabled={cablesDisabled}
+              />
+              <CableVisual
+                color="blue"
+                isCut={cutCable === 'blue'}
+                onClick={() => handleCutCable('blue')}
                 disabled={cablesDisabled}
               />
             </div>

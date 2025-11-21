@@ -7,15 +7,17 @@ import { ModuleScaffold } from '../common/ModuleScaffold'
 const getRandomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)]
 
 // -------------------------
-// Componente de Cable Visual (MISMO que Lagrange)
+// Componente de Cable Visual (ACTUALIZADO con 3 cables)
 // -------------------------
 const CableVisual = ({ color, isCut, onClick, disabled }) => {
   const colorMap = {
-    blue: 'bg-blue-500',
+    red: 'bg-red-500',
+    blue: 'bg-blue-500', 
     green: 'bg-green-500'
   }
 
   const colorShadow = {
+    red: 'rgba(239,68,68, 0.6)',
     blue: 'rgba(59,130,246, 0.6)',
     green: 'rgba(34,197,94, 0.6)'
   }
@@ -46,41 +48,49 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
   )
 }
 
-// Algoritmo de Falsa Posición
+// Algoritmo de Falsa Posición CORREGIDO según manual
 const falsePositionMethod = (func, a, b, tolerance = 0.001, maxIterations = 50) => {
   const iterations = []
   let currentA = a
-  let currentB = b
+  const fixedB = b // b se mantiene CONSTANTE
+  const fixedFb = func(b) // f(b) se mantiene CONSTANTE
   let prevX = null
   
-  for (let i = 0; i < maxIterations; i++) {
+  // Iteración 0 (solo para mostrar datos iniciales)
+  iterations.push({
+    iteration: 0,
+    a: currentA,
+    b: fixedB,
+    x: null,
+    error: null,
+    fa: func(currentA),
+    fb: fixedFb
+  })
+  
+  for (let i = 1; i <= maxIterations; i++) {
     const fa = func(currentA)
-    const fb = func(currentB)
     
     // Calcular x usando la fórmula de falsa posición
-    const x = currentA - (fa * (currentB - currentA)) / (fb - fa)
+    const x = currentA - (fa * (fixedB - currentA)) / (fixedFb - fa)
     const error = prevX !== null ? Math.abs(x - prevX) : null
     
     iterations.push({
       iteration: i,
       a: currentA,
-      b: currentB,
+      b: fixedB,
       x: x,
-      error: error
+      error: error,
+      fa: fa,
+      fb: fixedFb
     })
     
-    // Verificar convergencia
+    // Verificar convergencia (usar < según manual)
     if (error !== null && error < tolerance) {
       break
     }
     
-    // Determinar siguiente intervalo
-    if (fa * func(x) < 0) {
-      currentB = x
-    } else {
-      currentA = x
-    }
-    
+    // Siguiente iteración: a = x (b se mantiene constante)
+    currentA = x
     prevX = x
   }
   
@@ -138,8 +148,10 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       selectedProblem.tolerance
     )
     
+    // La última iteración con resultado válido (no la 0)
     const lastIteration = iterations[iterations.length - 1]
-    const totalIterations = iterations.length
+    // Total de iteraciones REALES (excluyendo la 0)
+    const totalIterations = iterations.length - 1
     
     setProblem({
       ...selectedProblem,
@@ -194,14 +206,14 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       Math.abs(lastErrorNum - problem.correctError) < 0.00000001
 
     if (solutionsCorrect) {
-      // ✅ LÓGICA DE CABLES SEGÚN MANUAL: Basado en número de iteraciones
+      // ✅ LÓGICA DE CABLES SEGÚN MANUAL CORREGIDA
       let correctColor = ''
       if (problem.totalIterations >= 0 && problem.totalIterations <= 4) {
-        correctColor = 'blue' // Rojo en manual, pero usamos azul (solo tenemos azul/verde)
+        correctColor = 'red' // 0-4 iteraciones = ROJO (seguir ejemplo del manual)
       } else if (problem.totalIterations >= 5 && problem.totalIterations <= 9) {
-        correctColor = 'blue' // Azul en manual
+        correctColor = 'blue' // 5-9 iteraciones = AZUL
       } else {
-        correctColor = 'green' // Verde en manual
+        correctColor = 'green' // 10+ iteraciones = VERDE
       }
       
       if (color === correctColor) {
@@ -209,7 +221,7 @@ export const NoLinealesFalsaPosicionModule = (props) => {
         setIsCompleted(true)
         props.onComplete?.()
       } else {
-        setResultMessage('❌ Cable incorrecto')
+        setResultMessage(`❌ Cable incorrecto - Debe ser ${correctColor.toUpperCase()}`)
         props.onError?.()
       }
     } else {
@@ -310,14 +322,20 @@ export const NoLinealesFalsaPosicionModule = (props) => {
           )}
         </div>
 
-        {/* Panel derecho: Cables */}
-        <div className={`w-48 rounded-lg border border-red-500/50 bg-red-900/20 p-6 ${disabledClass} flex flex-col`}>
+        {/* Panel derecho: Cables (ACTUALIZADO con 3 cables) */}
+        <div className={`w-64 rounded-lg border border-red-500/50 bg-red-900/20 p-6 ${disabledClass} flex flex-col`}>
           <div className="text-sm text-red-300 text-center mb-6 font-bold">
             SELECCIONAR CABLE
           </div>
           
           <div className="flex-1 flex items-center justify-center">
-            <div className="flex gap-12">
+            <div className="flex gap-8">
+              <CableVisual
+                color="red"
+                isCut={cutCable === 'red'}
+                onClick={() => handleCutCable('red')}
+                disabled={cablesDisabled}
+              />
               <CableVisual
                 color="blue"
                 isCut={cutCable === 'blue'}

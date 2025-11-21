@@ -54,7 +54,7 @@ const calculateBisection = (func, a, b, tolerance, maxIterations = 50) => {
   let prevX = null
   
   for (let i = 0; i < maxIterations; i++) {
-    currentX = (currentA + currentB) / 2
+    let currentX = (currentA + currentB) / 2
     const fa = func(currentA)
     const fx = func(currentX)
     const error = prevX !== null ? Math.abs(currentX - prevX) : null
