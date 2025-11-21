@@ -109,8 +109,8 @@ export default function LevelSelection() {
                                         animate="center"
                                         exit="exit"
                                         transition={{
-                                            x: { type: 'spring', stiffness: 300, damping: 30 },
-                                            opacity: { duration: 0.2 },
+                                            x: { type: 'spring', stiffness: 600, damping: 40 },
+                                            opacity: { duration: 0.15 },
                                         }}
                                         className="absolute w-full h-full"
                                     >

@@ -18,15 +18,15 @@ const CoordinatePlane = ({ points, onRootClick, disabled }) => {
 
   const handlePlaneClick = (e) => {
     if (disabled) return
-    
+
     const rect = e.currentTarget.getBoundingClientRect()
     const clickX = e.clientX - rect.left
     const clickY = e.clientY - rect.top
-    
+
     // Convertir coordenadas de píxeles a coordenadas matemáticas
     const mathX = (clickX - originX) / scale
     const mathY = -(clickY - originY) / scale
-    
+
     // Verificar si el click está cerca del eje X (raíz)
     if (Math.abs(mathY) < 0.5) {
       onRootClick({ x: mathX, y: 0 })
@@ -35,10 +35,10 @@ const CoordinatePlane = ({ points, onRootClick, disabled }) => {
 
   const renderPoint = (x, y, index) => {
     if (y === null) return null
-    
+
     const screenX = originX + x * scale
     const screenY = originY - y * scale
-    
+
     return (
       <circle
         key={index}
@@ -54,12 +54,12 @@ const CoordinatePlane = ({ points, onRootClick, disabled }) => {
 
   const renderLine = (start, end, index) => {
     if (start.y === null || end.y === null) return null
-    
+
     const startX = originX + start.x * scale
     const startY = originY - start.y * scale
     const endX = originX + end.x * scale
     const endY = originY - end.y * scale
-    
+
     return (
       <line
         key={index}
@@ -79,9 +79,9 @@ const CoordinatePlane = ({ points, onRootClick, disabled }) => {
 
   return (
     <div className="border border-gray-600 bg-white rounded-lg p-4">
-      <svg 
-        width={width} 
-        height={height} 
+      <svg
+        width={width}
+        height={height}
         className="bg-gray-50 rounded cursor-crosshair"
         onClick={handlePlaneClick}
       >
@@ -89,22 +89,22 @@ const CoordinatePlane = ({ points, onRootClick, disabled }) => {
         <line x1="0" y1={originY} x2={width} y2={originY} stroke="#6B7280" strokeWidth="1" />
         {/* Eje Y */}
         <line x1={originX} y1="0" x2={originX} y2={height} stroke="#6B7280" strokeWidth="1" />
-        
+
         {/* Marcas en eje X */}
         {xNumbers.map(num => (
           <g key={`x${num}`}>
-            <line 
-              x1={originX + num * scale} 
-              y1={originY - 5} 
-              x2={originX + num * scale} 
-              y2={originY + 5} 
-              stroke="#6B7280" 
-              strokeWidth="1" 
+            <line
+              x1={originX + num * scale}
+              y1={originY - 5}
+              x2={originX + num * scale}
+              y2={originY + 5}
+              stroke="#6B7280"
+              strokeWidth="1"
             />
-            <text 
-              x={originX + num * scale} 
-              y={originY + 20} 
-              textAnchor="middle" 
+            <text
+              x={originX + num * scale}
+              y={originY + 20}
+              textAnchor="middle"
               fontSize="12"
               fill="#374151"
             >
@@ -112,22 +112,22 @@ const CoordinatePlane = ({ points, onRootClick, disabled }) => {
             </text>
           </g>
         ))}
-        
+
         {/* Marcas en eje Y */}
         {yNumbers.map(num => (
           <g key={`y${num}`}>
-            <line 
-              x1={originX - 5} 
-              y1={originY - num * scale} 
-              x2={originX + 5} 
-              y2={originY - num * scale} 
-              stroke="#6B7280" 
-              strokeWidth="1" 
+            <line
+              x1={originX - 5}
+              y1={originY - num * scale}
+              x2={originX + 5}
+              y2={originY - num * scale}
+              stroke="#6B7280"
+              strokeWidth="1"
             />
-            <text 
-              x={originX - 15} 
-              y={originY - num * scale + 4} 
-              textAnchor="middle" 
+            <text
+              x={originX - 15}
+              y={originY - num * scale + 4}
+              textAnchor="middle"
               fontSize="12"
               fill="#374151"
             >
@@ -135,23 +135,23 @@ const CoordinatePlane = ({ points, onRootClick, disabled }) => {
             </text>
           </g>
         ))}
-        
+
         {/* Líneas de la gráfica */}
-        {points.slice(0, -1).map((point, index) => 
+        {points.slice(0, -1).map((point, index) =>
           renderLine(point, points[index + 1], index)
         )}
-        
+
         {/* Puntos */}
         {points.map((point, index) => renderPoint(point.x, point.y, index))}
-        
+
         {/* Área clickeable para raíces (eje X completo) */}
-        <line 
-          x1="0" 
-          y1={originY} 
-          x2={width} 
-          y2={originY} 
-          stroke="transparent" 
-          strokeWidth="20" 
+        <line
+          x1="0"
+          y1={originY}
+          x2={width}
+          y2={originY}
+          stroke="transparent"
+          strokeWidth="20"
           className="cursor-pointer"
         />
       </svg>
@@ -194,15 +194,21 @@ export const NoLinealesMetodoGraficoModule = (props) => {
   // Generar problema aleatorio
   useEffect(() => {
     const selectedProblem = getRandomFrom(problemsPool)
-    const correctYValues = selectedProblem.xValues.map(x => 
+    const correctYValues = selectedProblem.xValues.map(x =>
       parseFloat(selectedProblem.calculateY(x).toFixed(8))
     )
-    
+
+    console.log('=== Método Gráfico ===')
+    console.log('Función:', selectedProblem.function)
+    console.log('Valores X:', selectedProblem.xValues)
+    console.log('Valores Y correctos:', correctYValues)
+    console.log('Raíces correctas:', selectedProblem.correctRoots)
+
     setProblem({
       ...selectedProblem,
       correctYValues
     })
-    
+
     // Inicializar con nulls según la cantidad de xValues
     setYValues(selectedProblem.xValues.map(() => null))
     setFoundRoots([])
@@ -214,7 +220,7 @@ export const NoLinealesMetodoGraficoModule = (props) => {
 
   const handleYChange = (index, value) => {
     if (!isActive || isCompleted) return
-    
+
     // Limitar a 8 decimales
     let processedValue = value
     if (value.includes('.')) {
@@ -223,7 +229,7 @@ export const NoLinealesMetodoGraficoModule = (props) => {
         processedValue = `${integer}.${decimal.substring(0, 8)}`
       }
     }
-    
+
     const newYValues = [...yValues]
     // Permitir decimales y manejar entrada vacía
     newYValues[index] = processedValue === '' ? null : parseFloat(processedValue)
@@ -232,18 +238,18 @@ export const NoLinealesMetodoGraficoModule = (props) => {
 
   const handleRootClick = (root) => {
     if (!isActive || isCompleted) return
-    
+
     const rootX = parseFloat(root.x.toFixed(1))
-    
+
     // Verificar si esta raíz es correcta con tolerancia más estricta
-    const isCorrectRoot = problem.correctRoots.some(correctRoot => 
+    const isCorrectRoot = problem.correctRoots.some(correctRoot =>
       Math.abs(rootX - correctRoot) < 0.1 // ✅ Tolerancia más precisa
     )
-    
+
     if (isCorrectRoot && !foundRoots.includes(rootX)) {
       const newFoundRoots = [...foundRoots, rootX]
       setFoundRoots(newFoundRoots)
-      
+
       // Verificar si completó todo
       checkCompletion(yValues, newFoundRoots)
     }
@@ -277,7 +283,7 @@ export const NoLinealesMetodoGraficoModule = (props) => {
       // Solo mostrar error si ya completó todo y hay errores
       const newAttempts = attempts + 1
       setAttempts(newAttempts)
-      
+
       if (newAttempts >= 2) {
         setResultMessage('❌ Game Over - Se han agotado los intentos')
         props.onError?.() // ✅ Llamar a Game Over externo
@@ -322,13 +328,13 @@ export const NoLinealesMetodoGraficoModule = (props) => {
             <div className="text-sm text-center font-bold text-yellow-300 mb-4">
               {problem.function}
             </div>
-            
+
             <div className="bg-black/30 rounded border border-white/20">
               <div className="grid grid-cols-2 border-b border-white/20">
                 <div className="px-4 py-2 text-center font-bold border-r border-white/20">x</div>
                 <div className="px-4 py-2 text-center font-bold">y</div>
               </div>
-              
+
               {problem.xValues.map((x, index) => (
                 <div key={index} className="grid grid-cols-2 border-b border-white/10 last:border-b-0">
                   <div className="px-4 py-3 text-center border-r border-white/20 font-mono bg-black/20">
@@ -365,13 +371,12 @@ export const NoLinealesMetodoGraficoModule = (props) => {
 
           {resultMessage && (
             <div
-              className={`p-4 text-center text-sm font-bold rounded-lg ${
-                resultMessage.includes('✅')
+              className={`p-4 text-center text-sm font-bold rounded-lg ${resultMessage.includes('✅')
                   ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
                   : resultMessage.includes('Game Over')
-                  ? 'bg-red-600/40 border border-red-500/60 text-red-200'
-                  : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
-              }`}
+                    ? 'bg-red-600/40 border border-red-500/60 text-red-200'
+                    : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+                }`}
             >
               {resultMessage}
               {isCompleted && (
@@ -395,7 +400,7 @@ export const NoLinealesMetodoGraficoModule = (props) => {
             onRootClick={handleRootClick}
             disabled={!isActive || !allYFilled || isCompleted}
           />
-          
+
           {allYFilled && foundRoots.length > 0 && (
             <div className="text-center text-sm text-green-300 mt-2">
               Raíces encontradas: {foundRoots.join(', ')}

@@ -56,23 +56,23 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
 // Función para calcular g(x) usando Lagrange
 const calculateLagrange = (points, targetX) => {
   let result = 0
-  
+
   for (let i = 0; i < points.length; i++) {
     let term = points[i].y
     let numerator = 1
     let denominator = 1
-    
+
     for (let j = 0; j < points.length; j++) {
       if (i !== j) {
         numerator *= (targetX - points[j].x)
         denominator *= (points[i].x - points[j].x)
       }
     }
-    
+
     term *= (numerator / denominator)
     result += term
   }
-  
+
   return result
 }
 
@@ -93,7 +93,7 @@ export const InterpolacionLagrangeModule = (props) => {
       targetX: 2.4
     },
     {
-      description: "Obtener g(x) para x = 1.8", 
+      description: "Obtener g(x) para x = 1.8",
       xValues: [1.0, 1.5, 2.0, 2.5, 3.0],
       yValues: [2.1, 2.8, 3.2, 3.9, 4.5],
       targetX: 1.8
@@ -120,13 +120,18 @@ export const InterpolacionLagrangeModule = (props) => {
       y: selectedProblem.yValues[index]
     }))
     const correctGx = calculateLagrange(points, selectedProblem.targetX)
-    
+
+    console.log('=== Interpolación de Lagrange ===')
+    console.log('Problema:', selectedProblem.description)
+    console.log('Puntos:', points)
+    console.log('Resultado correcto g(x):', correctGx)
+
     setProblem({
       ...selectedProblem,
       points,
       correctGx
     })
-    
+
     setFinalResult('')
     setCutCable(null)
     setResultMessage('')
@@ -136,7 +141,7 @@ export const InterpolacionLagrangeModule = (props) => {
   // ✅ FUNCIÓN DE LIMITACIÓN DE 8 DECIMALES (igual que Newton y Lineal)
   const handleFinalResultChange = (e) => {
     const value = e.target.value
-    
+
     // Limitar a 8 decimales
     if (value.includes('.')) {
       const [integer, decimal] = value.split('.')
@@ -158,18 +163,18 @@ export const InterpolacionLagrangeModule = (props) => {
     }
 
     const finalResultNum = parseFloat(finalResult)
-    
+
     if (isNaN(finalResultNum)) {
       setResultMessage('❌ Ingresa un resultado válido')
       return
     }
 
     setCutCable(color)
-    
+
     // ✅ PRECISIÓN DE 8 DECIMALES - Margen de 0.00000001
     const finalCorrect = Math.abs(finalResultNum - problem.correctGx) < 0.00000001
-    const signCorrect = (finalResultNum > 0 && color === 'blue') || 
-                       (finalResultNum < 0 && color === 'green')
+    const signCorrect = (finalResultNum > 0 && color === 'blue') ||
+      (finalResultNum < 0 && color === 'green')
 
     if (finalCorrect && signCorrect) {
       setResultMessage('✅ ¡Correcto! Módulo terminado')
@@ -178,7 +183,7 @@ export const InterpolacionLagrangeModule = (props) => {
     } else {
       setResultMessage('❌ Error en el cálculo')
       // El Game Over es manejado externamente por el sistema del juego
-      props.onError?.() 
+      props.onError?.()
     }
   }
 
@@ -212,7 +217,7 @@ export const InterpolacionLagrangeModule = (props) => {
             <div className="text-sm text-center font-bold text-yellow-300 mb-4">
               {problem.description}
             </div>
-            
+
             {/* Tablas separadas para X y Y */}
             <div className="grid grid-cols-2 gap-4">
               {/* Tabla de X */}
@@ -224,7 +229,7 @@ export const InterpolacionLagrangeModule = (props) => {
                   </div>
                 ))}
               </div>
-              
+
               {/* Tabla de Y */}
               <div className="bg-black/30 rounded border border-white/20">
                 <div className="px-4 py-2 text-center font-bold border-b border-white/20">y</div>
@@ -256,11 +261,10 @@ export const InterpolacionLagrangeModule = (props) => {
           {/* Mensaje de resultado */}
           {resultMessage && (
             <div
-              className={`p-4 text-center text-sm font-bold rounded-lg ${
-                resultMessage.includes('Correcto')
-                  ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
-                  : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
-              }`}
+              className={`p-4 text-center text-sm font-bold rounded-lg ${resultMessage.includes('Correcto')
+                ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+                : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+                }`}
             >
               {resultMessage}
               {isCompleted && (
@@ -282,7 +286,7 @@ export const InterpolacionLagrangeModule = (props) => {
           <div className="text-sm text-red-300 text-center mb-6 font-bold">
             SELECCIONAR CABLE
           </div>
-          
+
           {/* Cables funcionales */}
           <div className="flex-1 flex items-center justify-center">
             <div className="flex gap-12">

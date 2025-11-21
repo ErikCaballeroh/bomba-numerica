@@ -50,19 +50,19 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
 const calculateDividedDifferences = (points) => {
   const n = points.length
   const table = Array(n).fill().map(() => Array(n).fill(0))
-  
+
   // Primera columna son los valores de y
   for (let i = 0; i < n; i++) {
     table[i][0] = points[i].y
   }
-  
+
   // Calcular diferencias divididas
   for (let j = 1; j < n; j++) {
     for (let i = 0; i < n - j; i++) {
-      table[i][j] = (table[i+1][j-1] - table[i][j-1]) / (points[i+j].x - points[i].x)
+      table[i][j] = (table[i + 1][j - 1] - table[i][j - 1]) / (points[i + j].x - points[i].x)
     }
   }
-  
+
   return table
 }
 
@@ -71,12 +71,12 @@ const calculateNewton = (points, targetX) => {
   const table = calculateDividedDifferences(points)
   let result = table[0][0]
   let product = 1
-  
+
   for (let i = 1; i < points.length; i++) {
-    product *= (targetX - points[i-1].x)
+    product *= (targetX - points[i - 1].x)
     result += table[0][i] * product
   }
-  
+
   return result
 }
 
@@ -124,13 +124,20 @@ export const InterpolacionNewtonDivididasModule = (props) => {
       y: selectedProblem.yValues[index]
     }))
     const correctPx = calculateNewton(points, selectedProblem.targetX)
-    
+    const dividedDifferences = calculateDividedDifferences(points)
+
+    console.log('=== Newton Diferencias Divididas ===')
+    console.log('Problema:', selectedProblem.description)
+    console.log('Puntos:', points)
+    console.log('Tabla de diferencias divididas:', dividedDifferences)
+    console.log('Resultado correcto P(x):', correctPx)
+
     setProblem({
       ...selectedProblem,
       points,
       correctPx
     })
-    
+
     setFinalResult('')
     setCutCable(null)
     setResultMessage('')
@@ -140,7 +147,7 @@ export const InterpolacionNewtonDivididasModule = (props) => {
   // ✅ FUNCIÓN DE LIMITACIÓN DE 8 DECIMALES
   const handleFinalResultChange = (e) => {
     const value = e.target.value
-    
+
     // Limitar a 8 decimales
     if (value.includes('.')) {
       const [integer, decimal] = value.split('.')
@@ -162,18 +169,18 @@ export const InterpolacionNewtonDivididasModule = (props) => {
     }
 
     const finalResultNum = parseFloat(finalResult)
-    
+
     if (isNaN(finalResultNum)) {
       setResultMessage('❌ Ingresa un resultado válido')
       return
     }
 
     setCutCable(color)
-    
+
     // ✅ PRECISIÓN DE 8 DECIMALES - Margen de 0.00000001
     const finalCorrect = Math.abs(finalResultNum - problem.correctPx) < 0.00000001
-    const signCorrect = (finalResultNum > 0 && color === 'blue') || 
-                       (finalResultNum < 0 && color === 'green')
+    const signCorrect = (finalResultNum > 0 && color === 'blue') ||
+      (finalResultNum < 0 && color === 'green')
 
     if (finalCorrect && signCorrect) {
       setResultMessage('✅ ¡Correcto! Módulo terminado')
@@ -215,7 +222,7 @@ export const InterpolacionNewtonDivididasModule = (props) => {
             <div className="text-sm text-center font-bold text-yellow-300 mb-4">
               {problem.description}
             </div>
-            
+
             {/* Tablas separadas para X y Y */}
             <div className="grid grid-cols-2 gap-4">
               {/* Tabla de X */}
@@ -227,7 +234,7 @@ export const InterpolacionNewtonDivididasModule = (props) => {
                   </div>
                 ))}
               </div>
-              
+
               {/* Tabla de Y */}
               <div className="bg-black/30 rounded border border-white/20">
                 <div className="px-4 py-2 text-center font-bold border-b border-white/20">y</div>
@@ -258,11 +265,10 @@ export const InterpolacionNewtonDivididasModule = (props) => {
           {/* Mensaje de resultado */}
           {resultMessage && (
             <div
-              className={`p-4 text-center text-sm font-bold rounded-lg ${
-                resultMessage.includes('Correcto')
-                  ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
-                  : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
-              }`}
+              className={`p-4 text-center text-sm font-bold rounded-lg ${resultMessage.includes('Correcto')
+                ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+                : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+                }`}
             >
               {resultMessage}
               {isCompleted && (
@@ -284,7 +290,7 @@ export const InterpolacionNewtonDivididasModule = (props) => {
           <div className="text-sm text-red-300 text-center mb-6 font-bold">
             SELECCIONAR CABLE
           </div>
-          
+
           {/* Cables funcionales */}
           <div className="flex-1 flex items-center justify-center">
             <div className="flex gap-12">
