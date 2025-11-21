@@ -52,13 +52,13 @@ const calculateBisection = (func, a, b, tolerance, maxIterations = 50) => {
   let currentA = a
   let currentB = b
   let prevX = null
-  
+
   for (let i = 0; i < maxIterations; i++) {
     let currentX = (currentA + currentB) / 2
     const fa = func(currentA)
     const fx = func(currentX)
     const error = prevX !== null ? Math.abs(currentX - prevX) : null
-    
+
     iterations.push({
       iteration: i,
       a: currentA,
@@ -66,22 +66,22 @@ const calculateBisection = (func, a, b, tolerance, maxIterations = 50) => {
       x: currentX,
       error: error
     })
-    
+
     // Verificar convergencia
     if (error !== null && error < tolerance) {
       break
     }
-    
+
     // Determinar nuevo intervalo
     if (fa * fx < 0) {
       currentB = currentX
     } else {
       currentA = currentX
     }
-    
+
     prevX = currentX
   }
-  
+
   return iterations
 }
 
@@ -90,9 +90,9 @@ const getFourthDecimal = (number) => {
   if (number === null || number === undefined) return null
   const numberStr = Math.abs(number).toString()
   const decimalIndex = numberStr.indexOf('.')
-  
+
   if (decimalIndex === -1) return 0
-  
+
   const decimalPart = numberStr.substring(decimalIndex + 1)
   return decimalPart.length >= 4 ? parseInt(decimalPart[3]) : 0
 }
@@ -112,14 +112,14 @@ export const NoLinealesBisectrizModule = (props) => {
   // Pool de problemas predefinidos
   const problemsPool = [
     {
-      function: (x) => x**3 - 2*x - 5,
+      function: (x) => x ** 3 - 2 * x - 5,
       a: 2,
       b: 3,
       tolerance: 0.001,
       description: "f(x) = x³ - 2x - 5"
     },
     {
-      function: (x) => x**2 - 3,
+      function: (x) => x ** 2 - 3,
       a: 1,
       b: 2,
       tolerance: 0.001,
@@ -143,11 +143,11 @@ export const NoLinealesBisectrizModule = (props) => {
       selectedProblem.b,
       selectedProblem.tolerance
     )
-    
+
     // Obtener las últimas DOS iteraciones como pide el manual
     const lastIteration = iterations[iterations.length - 1]
     const penultimateIteration = iterations[iterations.length - 2]
-    
+
     setProblem({
       ...selectedProblem,
       iterations,
@@ -156,7 +156,7 @@ export const NoLinealesBisectrizModule = (props) => {
       correctError: lastIteration.error,
       fourthDecimal: getFourthDecimal(lastIteration.error)
     })
-    
+
     setLastTwoIterations({
       penultimate: { a: '', b: '', x: '' },
       last: { a: '', b: '', x: '' }
@@ -182,7 +182,7 @@ export const NoLinealesBisectrizModule = (props) => {
         return
       }
     }
-    
+
     setLastTwoIterations(prev => ({
       ...prev,
       [iteration]: {
@@ -208,9 +208,9 @@ export const NoLinealesBisectrizModule = (props) => {
 
     // Verificar que TODOS los campos estén completos (6 valores + error)
     const { penultimate, last } = lastTwoIterations
-    const allFieldsComplete = 
+    const allFieldsComplete =
       penultimate.a.trim() && penultimate.b.trim() && penultimate.x.trim() &&
-      last.a.trim() && last.b.trim() && last.x.trim() && 
+      last.a.trim() && last.b.trim() && last.x.trim() &&
       error.trim()
 
     if (!allFieldsComplete) {
@@ -224,16 +224,16 @@ export const NoLinealesBisectrizModule = (props) => {
       parseFloat(last.a), parseFloat(last.b), parseFloat(last.x),
       parseFloat(error)
     ]
-    
+
     if (values.some(isNaN)) {
       setResultMessage('❌ Ingresa valores válidos')
       return
     }
 
     setCutCable(color)
-    
+
     // ✅ PRECISIÓN DE 8 DECIMALES para todas las soluciones
-    const solutionsCorrect = 
+    const solutionsCorrect =
       Math.abs(values[0] - problem.penultimateIteration.a) < 0.00000001 &&
       Math.abs(values[1] - problem.penultimateIteration.b) < 0.00000001 &&
       Math.abs(values[2] - problem.penultimateIteration.x) < 0.00000001 &&
@@ -246,7 +246,7 @@ export const NoLinealesBisectrizModule = (props) => {
       // ✅ LÓGICA DE CABLES SEGÚN MANUAL: Basado en cuarto decimal del error
       const fourthDecimal = problem.fourthDecimal
       let correctColor = ''
-      
+
       if (fourthDecimal >= 0 && fourthDecimal <= 3) {
         correctColor = 'blue'
       } else if (fourthDecimal >= 4 && fourthDecimal <= 6) {
@@ -255,7 +255,7 @@ export const NoLinealesBisectrizModule = (props) => {
         correctColor = 'blue'
       }
       // NOTA: El manual dice que TODOS los casos son cable AZUL
-      
+
       if (color === correctColor) {
         setResultMessage('✅ ¡Correcto! Módulo terminado')
         setIsCompleted(true)
@@ -282,9 +282,9 @@ export const NoLinealesBisectrizModule = (props) => {
 
   const disabledClass = !isActive ? 'opacity-50 cursor-not-allowed' : ''
   const { penultimate, last } = lastTwoIterations
-  const allFieldsComplete = 
+  const allFieldsComplete =
     penultimate.a.trim() && penultimate.b.trim() && penultimate.x.trim() &&
-    last.a.trim() && last.b.trim() && last.x.trim() && 
+    last.a.trim() && last.b.trim() && last.x.trim() &&
     error.trim()
   const cablesDisabled = !isActive || !allFieldsComplete || isCompleted
 
@@ -292,7 +292,7 @@ export const NoLinealesBisectrizModule = (props) => {
     <ModuleScaffold
       {...props}
       topic="Ecuaciones no lineales"
-      title="Método de la Bisección"
+      title="Bisectriz"
       description="Resuelve con precisión de 8 decimales"
     >
       <div className="flex gap-8">
@@ -373,11 +373,10 @@ export const NoLinealesBisectrizModule = (props) => {
           {/* Mensaje de resultado */}
           {resultMessage && (
             <div
-              className={`p-4 text-center text-sm font-bold rounded-lg ${
-                resultMessage.includes('Correcto')
-                  ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
-                  : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
-              }`}
+              className={`p-4 text-center text-sm font-bold rounded-lg ${resultMessage.includes('Correcto')
+                ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+                : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+                }`}
             >
               {resultMessage}
               {isCompleted && (
@@ -399,7 +398,7 @@ export const NoLinealesBisectrizModule = (props) => {
           <div className="text-sm text-red-300 text-center mb-6 font-bold">
             SELECCIONAR CABLE
           </div>
-          
+
           <div className="flex-1 flex items-center justify-center">
             <div className="flex gap-12">
               <CableVisual

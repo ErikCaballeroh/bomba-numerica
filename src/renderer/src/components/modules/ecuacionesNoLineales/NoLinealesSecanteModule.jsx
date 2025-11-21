@@ -350,7 +350,7 @@ export const NoLinealesSecanteModule = (props) => {
     <ModuleScaffold
       {...props}
       topic="Ecuaciones No Lineales"
-      title="Método de la Secante"
+      title="Secante"
       description="Calcula la raíz usando el método de la secante."
     >
       {/* Problema */}

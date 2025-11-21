@@ -318,7 +318,7 @@ export const NoLinealesMetodoGraficoModule = (props) => {
     <ModuleScaffold
       {...props}
       topic="Ecuaciones no lineales"
-      title="Metodo grafico"
+      title="Método gráfico"
       description="Resuelve el problema"
     >
       <div className="flex gap-8">
@@ -372,10 +372,10 @@ export const NoLinealesMetodoGraficoModule = (props) => {
           {resultMessage && (
             <div
               className={`p-4 text-center text-sm font-bold rounded-lg ${resultMessage.includes('✅')
-                  ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
-                  : resultMessage.includes('Game Over')
-                    ? 'bg-red-600/40 border border-red-500/60 text-red-200'
-                    : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+                ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+                : resultMessage.includes('Game Over')
+                  ? 'bg-red-600/40 border border-red-500/60 text-red-200'
+                  : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
                 }`}
             >
               {resultMessage}
