@@ -88,11 +88,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: '3x³ - 2x - 3',
       fnLatex: '3x^3 - 2x - 3',
       fn: (x) => 3 * x ** 3 - 2 * x - 3,
-      table: [
-        { x: -2, fx: -23 },
-        { x: -1, fx: -4 },
-        { x: 0, fx: -3 }
-      ],
       a: 1,
       b: 2
     },
@@ -100,11 +95,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: 'x³ - 4x - 9',
       fnLatex: 'x^3 - 4x - 9',
       fn: (x) => x ** 3 - 4 * x - 9,
-      table: [
-        { x: 0, fx: -9 },
-        { x: 1, fx: -12 },
-        { x: 2, fx: -9 }
-      ],
       a: 2,
       b: 3
     },
@@ -112,11 +102,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: 'x³ - 6x² + 11x - 6',
       fnLatex: 'x^3 - 6x^2 + 11x - 6',
       fn: (x) => x ** 3 - 6 * x ** 2 + 11 * x - 6,
-      table: [
-        { x: 0, fx: -6 },
-        { x: 0.5, fx: -1.875 },
-        { x: 0.8, fx: -0.488 }
-      ],
       a: 0.8,
       b: 1.2
     },
@@ -124,11 +109,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: '2x³ - 5x + 1',
       fnLatex: '2x^3 - 5x + 1',
       fn: (x) => 2 * x ** 3 - 5 * x + 1,
-      table: [
-        { x: 0, fx: 1 },
-        { x: 0.5, fx: -1.25 },
-        { x: 1, fx: -2 }
-      ],
       a: 1,
       b: 2
     },
@@ -136,11 +116,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: 'x³ + x - 3',
       fnLatex: 'x^3 + x - 3',
       fn: (x) => x ** 3 + x - 3,
-      table: [
-        { x: 0, fx: -3 },
-        { x: 0.5, fx: -2.375 },
-        { x: 1, fx: -1 }
-      ],
       a: 1,
       b: 2
     },
@@ -148,11 +123,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: 'x³ - 2x² - 5',
       fnLatex: 'x^3 - 2x^2 - 5',
       fn: (x) => x ** 3 - 2 * x ** 2 - 5,
-      table: [
-        { x: 1, fx: -6 },
-        { x: 2, fx: -5 },
-        { x: 2.5, fx: -2.875 }
-      ],
       a: 2.5,
       b: 3
     },
@@ -160,11 +130,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: 'x³ - 3x + 1',
       fnLatex: 'x^3 - 3x + 1',
       fn: (x) => x ** 3 - 3 * x + 1,
-      table: [
-        { x: -2, fx: -1 },
-        { x: -1, fx: 3 },
-        { x: 0, fx: 1 }
-      ],
       a: 0,
       b: 1
     },
@@ -172,11 +137,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: '2x³ + 3x² - 11x - 6',
       fnLatex: '2x^3 + 3x^2 - 11x - 6',
       fn: (x) => 2 * x ** 3 + 3 * x ** 2 - 11 * x - 6,
-      table: [
-        { x: 0, fx: -6 },
-        { x: 1, fx: -12 },
-        { x: 1.5, fx: -12 }
-      ],
       a: 1.5,
       b: 2
     },
@@ -184,11 +144,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: 'x³ - 7x + 6',
       fnLatex: 'x^3 - 7x + 6',
       fn: (x) => x ** 3 - 7 * x + 6,
-      table: [
-        { x: 0, fx: 6 },
-        { x: 1, fx: 0 },
-        { x: 1.5, fx: -4.125 }
-      ],
       a: 1.5,
       b: 2
     },
@@ -196,11 +151,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
       function: 'x³ + 2x² - 3x - 1',
       fnLatex: 'x^3 + 2x^2 - 3x - 1',
       fn: (x) => x ** 3 + 2 * x ** 2 - 3 * x - 1,
-      table: [
-        { x: 0, fx: -1 },
-        { x: 0.5, fx: -1.875 },
-        { x: 1, fx: -1 }
-      ],
       a: 1,
       b: 2
     }
@@ -229,8 +179,8 @@ export const NoLinealesFalsaPosicionModule = (props) => {
     let error = Infinity
     const tolerance = 0.001
 
-    // Iterar hasta que el error sea <= 0.001
-    while (error > tolerance) {
+    // Iterar hasta que el error sea <= 0.001 (primeros 3 decimales)
+    while (error > tolerance && iterationCount < 100) {
       // Calcular x usando la fórmula de falsa posición
       const x = a - (fa * (b - a)) / (fb - fa)
       const fx = fn(x)
@@ -249,28 +199,23 @@ export const NoLinealesFalsaPosicionModule = (props) => {
         a,
         x,
         fa,
+        fx,
         error: x_prev !== null ? error : null
       })
 
-      // Actualizar para la siguiente iteración
-      if (fx * fa < 0) {
-        // La raíz está entre a y x
-        b = b // b no cambia
-        fb = fb
+      // Actualizar para la siguiente iteración (mantener intervalo que contiene la raíz)
+      // Si f(x) y f(a) tienen el mismo signo, reemplazar a
+      if (fx * fa > 0) {
         a = x
         fa = fx
       } else {
-        // La raíz está entre x y b
-        // a no cambia
+        // Si f(x) y f(a) tienen signos opuestos, reemplazar b
         b = x
         fb = fx
       }
 
       x_prev = x
       iterationCount++
-
-      // Límite de seguridad para evitar bucles infinitos
-      if (iterationCount > 100) break
     }
 
     const finalX = iterations[iterations.length - 1].x
@@ -284,16 +229,12 @@ export const NoLinealesFalsaPosicionModule = (props) => {
 
     console.log('=== Ecuaciones No Lineales - Falsa Posición ===')
     console.log('Función: f(x) =', p.function)
-    console.log('Tabla inicial:')
-    p.table.forEach((row) => {
-      console.log(`  x = ${row.x}, f(x) = ${row.fx}`)
-    })
     console.log('a inicial =', aInit, ', f(a) =', fa_init)
     console.log('b inicial =', bInit, ', f(b) =', fb_init)
     console.log('\nIteraciones:')
     iterations.forEach((it) => {
       console.log(
-        `  i=${it.i}: b=${it.b.toFixed(8)}, f(b)=${it.fb.toFixed(8)}, a=${it.a.toFixed(8)}, x=${it.x.toFixed(8)}, f(a)=${it.fa.toFixed(8)}, error=${it.error !== null ? it.error.toFixed(8) : 'N/A'}`
+        `  i=${it.i}: b=${it.b.toFixed(10)}, f(b)=${it.fb.toFixed(10)}, a=${it.a.toFixed(10)}, x=${it.x.toFixed(10)}, f(a)=${it.fa.toFixed(10)}, f(x)=${it.fx.toFixed(10)}, error=${it.error !== null ? it.error.toFixed(10) : 'N/A'}`
       )
     })
     console.log('\nResultado final:')
@@ -432,26 +373,6 @@ export const NoLinealesFalsaPosicionModule = (props) => {
           <p className="mb-2">
             Calcular la raíz para f(x) = <span className="font-mono font-semibold text-white">{problem.function}</span>
           </p>
-
-          <div className="mb-2">
-            <p className="font-semibold text-white mb-1">Tabla:</p>
-            {problem.table.map((row, idx) => (
-              <p key={idx}>
-                x = {row.x}, f(x) = {row.fx}
-              </p>
-            ))}
-          </div>
-
-          <div>
-            <p>
-              a → <span className="font-semibold text-white">{problem.a}</span>, f(a) ={' '}
-              <span className="font-semibold text-white">{problem.fa_init.toFixed(4)}</span>
-            </p>
-            <p>
-              b → <span className="font-semibold text-white">{problem.b}</span>, f(b) ={' '}
-              <span className="font-semibold text-white">{problem.fb_init.toFixed(4)}</span>
-            </p>
-          </div>
         </div>
       </div>
 
