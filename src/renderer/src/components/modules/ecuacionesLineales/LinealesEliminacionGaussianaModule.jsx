@@ -1,187 +1,331 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ModuleScaffold } from '../common/ModuleScaffold';
 
+// -------------------------
+// Utilidades
+// -------------------------
+const getRandomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+// -------------------------
+// Componente de Cable Visual
+// -------------------------
+const CableVisual = ({ color, isCut, onClick, disabled }) => {
+  const colorMap = {
+    red: 'bg-red-500',
+    blue: 'bg-blue-500', 
+    green: 'bg-green-500'
+  }
+
+  const colorShadow = {
+    red: 'rgba(239,68,68, 0.6)',
+    blue: 'rgba(59,130,246, 0.6)',
+    green: 'rgba(34,197,94, 0.6)'
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="relative flex flex-col items-center justify-center group disabled:opacity-50 disabled:cursor-not-allowed h-full"
+    >
+      <div className="relative w-4 h-60">
+        {!isCut ? (
+          <div
+            className={`absolute inset-0 rounded-full ${colorMap[color]} transition-all duration-300 group-hover:shadow-lg`}
+            style={{
+              boxShadow: `0 0 8px ${colorShadow[color]}`
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0 flex flex-col items-center justify-between py-2">
+            <div className={`w-4 h-28 ${colorMap[color]} rounded-t-full opacity-80`} />
+            <div className="text-lg animate-pulse">⚡</div>
+            <div className={`w-4 h-28 ${colorMap[color]} rounded-b-full opacity-80`} />
+          </div>
+        )}
+      </div>
+    </button>
+  )
+}
+
 export const LinealesEliminacionGaussianaModule = (props) => {
-  const [matrix, setMatrix] = useState([
-    [1, 1, 1, 6],    // Ejemplo: x + y + z = 6
-    [2, 1, -1, 1],   // 2x + y - z = 1
-    [1, -1, 2, 8]    // x - y + 2z = 8
-  ]);
-  
-  const [steps, setSteps] = useState([]);
-  const [solutions, setSolutions] = useState({ x: null, y: null, z: null });
-  const [cableColor, setCableColor] = useState('');
+  const [problem, setProblem] = useState(null)
+  const [solutions, setSolutions] = useState({ x: '', y: '', z: '' })
+  const [cutCable, setCutCable] = useState(null)
+  const [resultMessage, setResultMessage] = useState('')
+  const [isCompleted, setIsCompleted] = useState(false)
+  const isActive = props.isActive !== false
 
-  const performGaussianElimination = () => {
-    const newSteps = [];
-    const currentMatrix = JSON.parse(JSON.stringify(matrix));
+  // Pool de problemas predefinidos
+  const problemsPool = [
+    {
+      matrix: [
+        [2, 1, -1, 8],
+        [-3, -1, 2, -11],
+        [-2, 1, 2, -3]
+      ]
+    },
+    {
+      matrix: [
+        [3, 2, -1, 10],
+        [2, -2, 4, -2],
+        [-1, 0.5, -1, 0]
+      ]
+    },
+    {
+      matrix: [
+        [1, 1, 1, 6],
+        [2, 1, -1, 1],
+        [1, -1, 2, 8]
+      ]
+    },
+    {
+      matrix: [
+        [2, 3, -1, 5],
+        [4, 4, -3, 3],
+        [-2, 3, -1, 1]
+      ]
+    }
+  ]
+
+  // Generar problema aleatorio
+  useEffect(() => {
+    const selectedProblem = getRandomFrom(problemsPool)
     
-    newSteps.push({
-      title: "Matriz Inicial",
-      matrix: JSON.parse(JSON.stringify(currentMatrix)),
-      description: "Matriz aumentada del sistema de ecuaciones"
-    });
-
+    // Calcular solución correcta
+    const matrix = JSON.parse(JSON.stringify(selectedProblem.matrix));
+    
+    // Eliminación Gaussiana
+    const n = 3;
+    
     // Paso 1: Pivote a11
-    const a11 = currentMatrix[0][0];
-    
-    // Fila 2: R2 ← R2 - (a21/a11)R1
-    const factor21 = currentMatrix[1][0] / a11;
-    for (let j = 0; j < 4; j++) {
-      currentMatrix[1][j] -= factor21 * currentMatrix[0][j];
+    const a11 = matrix[0][0];
+    if (a11 !== 0) {
+      // Fila 2
+      const factor21 = matrix[1][0] / a11;
+      for (let j = 0; j < 4; j++) {
+        matrix[1][j] -= factor21 * matrix[0][j];
+      }
+      
+      // Fila 3
+      const factor31 = matrix[2][0] / a11;
+      for (let j = 0; j < 4; j++) {
+        matrix[2][j] -= factor31 * matrix[0][j];
+      }
     }
-    
-    // Fila 3: R3 ← R3 - (a31/a11)R1
-    const factor31 = currentMatrix[2][0] / a11;
-    for (let j = 0; j < 4; j++) {
-      currentMatrix[2][j] -= factor31 * currentMatrix[0][j];
-    }
-    
-    newSteps.push({
-      title: "Después del primer pivote (a11)",
-      matrix: JSON.parse(JSON.stringify(currentMatrix)),
-      description: `Se crearon ceros debajo del pivote a11 = ${a11}`
-    });
 
     // Paso 2: Pivote a'22
-    const a22_prime = currentMatrix[1][1];
-    
-    // Fila 3: R3 ← R3 - (a'32/a'22)R2
-    const factor32 = currentMatrix[2][1] / a22_prime;
-    for (let j = 0; j < 4; j++) {
-      currentMatrix[2][j] -= factor32 * currentMatrix[1][j];
+    const a22_prime = matrix[1][1];
+    if (a22_prime !== 0) {
+      // Fila 3
+      const factor32 = matrix[2][1] / a22_prime;
+      for (let j = 0; j < 4; j++) {
+        matrix[2][j] -= factor32 * matrix[1][j];
+      }
     }
-    
-    newSteps.push({
-      title: "Matriz Triangular Superior",
-      matrix: JSON.parse(JSON.stringify(currentMatrix)),
-      description: `Se creó cero debajo del pivote a'22 = ${a22_prime.toFixed(2)}`
-    });
 
     // Sustitución hacia atrás
-    const z = currentMatrix[2][3] / currentMatrix[2][2];
-    const y = (currentMatrix[1][3] - currentMatrix[1][2] * z) / currentMatrix[1][1];
-    const x = (currentMatrix[0][3] - currentMatrix[0][2] * z - currentMatrix[0][1] * y) / currentMatrix[0][0];
+    const z = matrix[2][3] / matrix[2][2];
+    const y = (matrix[1][3] - matrix[1][2] * z) / matrix[1][1];
+    const x = (matrix[0][3] - matrix[0][2] * z - matrix[0][1] * y) / matrix[0][0];
 
-    const solution = { x, y, z };
-    setSolutions(solution);
-
-    // Determinar color del cable
-    const negativeCount = [x, y, z].filter(val => val < 0).length;
-    let color = '';
-    if (negativeCount === 0) color = 'rojo';
-    else if (negativeCount === 1) color = 'azul';
-    else color = 'verde';
+    setProblem({
+      matrix: selectedProblem.matrix,
+      correctSolution: { x, y, z }
+    })
     
-    setCableColor(color);
+    setSolutions({ x: '', y: '', z: '' })
+    setCutCable(null)
+    setResultMessage('')
+    setIsCompleted(false)
+  }, [])
 
-    newSteps.push({
-      title: "Solución",
-      matrix: JSON.parse(JSON.stringify(currentMatrix)),
-      description: `x = ${x.toFixed(2)}, y = ${y.toFixed(2)}, z = ${z.toFixed(2)} - Cortar cable ${color}`
-    });
+  const handleSolutionChange = (variable, value) => {
+    // Limitar a 8 decimales
+    if (value.includes('.')) {
+      const [integer, decimal] = value.split('.')
+      if (decimal && decimal.length > 8) {
+        setSolutions(prev => ({
+          ...prev,
+          [variable]: `${integer}.${decimal.substring(0, 8)}`
+        }))
+        return
+      }
+    }
+    
+    setSolutions(prev => ({
+      ...prev,
+      [variable]: value
+    }))
+  }
 
-    setSteps(newSteps);
-  };
+  const handleCutCable = (color) => {
+    if (!isActive || !problem || isCompleted) return
 
-  const updateMatrixValue = (row, col, value) => {
-    const newMatrix = [...matrix];
-    newMatrix[row][col] = parseFloat(value) || 0;
-    setMatrix(newMatrix);
-    setSteps([]);
-    setSolutions({ x: null, y: null, z: null });
-    setCableColor('');
-  };
+    // Verificar que todas las soluciones estén ingresadas
+    if (!solutions.x.trim() || !solutions.y.trim() || !solutions.z.trim()) {
+      setResultMessage('❌ Ingresa todas las soluciones primero')
+      return
+    }
+
+    const xNum = parseFloat(solutions.x)
+    const yNum = parseFloat(solutions.y)
+    const zNum = parseFloat(solutions.z)
+    
+    if (isNaN(xNum) || isNaN(yNum) || isNaN(zNum)) {
+      setResultMessage('❌ Ingresa soluciones válidas')
+      return
+    }
+
+    setCutCable(color)
+    
+    // Verificar precisión de 8 decimales
+    const xCorrect = Math.abs(xNum - problem.correctSolution.x) < 0.00000001
+    const yCorrect = Math.abs(yNum - problem.correctSolution.y) < 0.00000001
+    const zCorrect = Math.abs(zNum - problem.correctSolution.z) < 0.00000001
+
+    if (xCorrect && yCorrect && zCorrect) {
+      // Determinar cable según reglas del manual
+      const negativeCount = [xNum, yNum, zNum].filter(val => val < 0).length;
+      let correctColor = '';
+      if (negativeCount === 0) correctColor = 'red';
+      else if (negativeCount === 1) correctColor = 'blue';
+      else correctColor = 'green';
+
+      if (color === correctColor) {
+        setResultMessage('✅ ¡Correcto! Módulo terminado')
+        setIsCompleted(true)
+        props.onComplete?.()
+      } else {
+        setResultMessage('❌ Cable incorrecto')
+        props.onError?.()
+      }
+    } else {
+      setResultMessage('❌ Error en el cálculo')
+      props.onError?.()
+    }
+  }
+
+  const handleComplete = () => {
+    if (typeof props.onComplete === 'function') {
+      props.onComplete()
+    }
+  }
+
+  if (!problem) {
+    return <p className="text-center">Generando problema...</p>
+  }
+
+  const disabledClass = !isActive ? 'opacity-50 cursor-not-allowed' : ''
+  const cablesDisabled = !isActive || !solutions.x.trim() || !solutions.y.trim() || !solutions.z.trim() || isCompleted
 
   return (
     <ModuleScaffold
       {...props}
       topic="Ecuaciones lineales"
       title="Eliminación Gaussiana"
-      description="Lienzo para la eliminación gaussiana."
+      description="Resuelve con precisión de 8 decimales"
     >
-      <div className="p-6">
-        {/* Entrada de matriz */}
-        <div className="mb-6">
-          <h3 className="text-lg font-bold mb-3">Matriz del Sistema (3x3 + términos independientes)</h3>
-          <div className="grid grid-cols-4 gap-2 w-64">
-            {matrix.map((row, i) => (
-              row.map((value, j) => (
-                <input
-                  key={`${i}-${j}`}
-                  type="number"
-                  value={value}
-                  onChange={(e) => updateMatrixValue(i, j, e.target.value)}
-                  className="w-12 p-1 border rounded text-center"
-                />
-              ))
-            ))}
-          </div>
-        </div>
-
-        {/* Botón para resolver */}
-        <button
-          onClick={performGaussianElimination}
-          className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-6"
-        >
-          Resolver por Eliminación Gaussiana
-        </button>
-
-        {/* Pasos de la solución */}
-        {steps.length > 0 && (
-          <div className="mb-6">
-            <h3 className="text-lg font-bold mb-3">Proceso de Solución:</h3>
-            {steps.map((step, index) => (
-              <div key={index} className="mb-4 p-3 border rounded">
-                <h4 className="font-bold">{step.title}</h4>
-                <p className="text-sm text-gray-600 mb-2">{step.description}</p>
-                <div className="flex space-x-2">
-                  {step.matrix.map((row, i) => (
-                    <div key={i} className="flex flex-col">
-                      {row.map((val, j) => (
-                        <div key={j} className="w-12 h-8 border flex items-center justify-center">
-                          {val.toFixed(2)}
-                        </div>
-                      ))}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Resultados finales */}
-        {solutions.x !== null && (
-          <div className="p-4 bg-gray-100 rounded">
-            <h3 className="text-lg font-bold mb-2">Resultados:</h3>
-            <p>x = {solutions.x.toFixed(2)}</p>
-            <p>y = {solutions.y.toFixed(2)}</p>
-            <p>z = {solutions.z.toFixed(2)}</p>
+      <div className="flex gap-8">
+        {/* Panel izquierdo: Problema y entrada */}
+        <div className="flex-1">
+          {/* Matriz del sistema */}
+          <div className={`rounded-lg border border-yellow-500/50 bg-yellow-500/5 p-4 mb-6 ${disabledClass}`}>
+            <div className="text-sm text-center font-bold text-yellow-300 mb-4">
+              Sistema de Ecuaciones
+            </div>
             
-            <div className="mt-4 p-3 bg-yellow-100 rounded">
-              <h4 className="font-bold">Decisión del cable:</h4>
-              <p>
-                {cableColor === 'rojo' && '✅ Ninguna variable es negativa - CORTAR CABLE ROJO'}
-                {cableColor === 'azul' && '🔵 Una variable es negativa - CORTAR CABLE AZUL'}
-                {cableColor === 'verde' && '🟢 Dos o más variables son negativas - CORTAR CABLE VERDE'}
-              </p>
+            <div className="flex justify-center">
+              <div className="grid grid-cols-4 gap-2">
+                {problem.matrix.map((row, i) => (
+                  row.map((value, j) => (
+                    <div 
+                      key={`${i}-${j}`} 
+                      className={`w-12 h-8 border flex items-center justify-center ${
+                        j === 3 ? 'border-l-2 border-l-yellow-400' : ''
+                      }`}
+                    >
+                      {value}
+                    </div>
+                  ))
+                ))}
+              </div>
             </div>
           </div>
-        )}
 
-        {/* Instrucciones del manual */}
-        <div className="mt-6 p-4 bg-blue-50 rounded">
-          <h3 className="text-lg font-bold mb-2">Instrucciones del Manual:</h3>
-          <ul className="list-disc list-inside text-sm">
-            <li>Crear matriz aumentada e identificar diagonal principal</li>
-            <li>Pivote inicial: a₁₁ - crear ceros debajo</li>
-            <li>Siguiente pivote: a₂₂ - crear cero en fila 3</li>
-            <li>Sustitución hacia atrás para encontrar x, y, z</li>
-            <li>0 negativos → Cable ROJO | 1 negativo → Cable AZUL | 2+ negativos → Cable VERDE</li>
-          </ul>
+          {/* Inputs de solución */}
+          <div className={`rounded-lg border border-purple-500/50 bg-purple-500/5 p-4 mb-6 ${disabledClass}`}>
+            <label className="block text-sm text-purple-300 mb-3 text-center font-bold">
+              SOLUCIONES
+            </label>
+            <div className="grid grid-cols-3 gap-4">
+              {['x', 'y', 'z'].map((variable) => (
+                <div key={variable} className="text-center">
+                  <div className="text-sm text-purple-300 mb-2">{variable}</div>
+                  <input
+                    type="number"
+                    disabled={!isActive || isCompleted}
+                    className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                    value={solutions[variable]}
+                    onChange={(e) => handleSolutionChange(variable, e.target.value)}
+                    placeholder="0.00000000"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Mensaje de resultado */}
+          {resultMessage && (
+            <div
+              className={`p-4 text-center text-sm font-bold rounded-lg ${
+                resultMessage.includes('Correcto')
+                  ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+                  : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+              }`}
+            >
+              {resultMessage}
+              {isCompleted && (
+                <div className="mt-3">
+                  <button
+                    onClick={handleComplete}
+                    className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded font-semibold transition-colors"
+                  >
+                    Cerrar Módulo
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Panel derecho: Cables */}
+        <div className={`w-48 rounded-lg border border-red-500/50 bg-red-900/20 p-6 ${disabledClass} flex flex-col`}>
+          <div className="text-sm text-red-300 text-center mb-6 font-bold">
+            SELECCIONAR CABLE
+          </div>
+          
+          <div className="flex-1 flex items-center justify-center">
+            <div className="flex gap-12">
+              {['red', 'blue', 'green'].map((color) => (
+                <CableVisual
+                  key={color}
+                  color={color}
+                  isCut={cutCable === color}
+                  onClick={() => handleCutCable(color)}
+                  disabled={cablesDisabled}
+                />
+              ))}
+            </div>
+          </div>
+
+          {(!solutions.x.trim() || !solutions.y.trim() || !solutions.z.trim()) && (
+            <div className="text-xs text-center text-red-300/70 mt-4">
+              Ingresa todas las soluciones para activar los cables
+            </div>
+          )}
         </div>
       </div>
     </ModuleScaffold>
-  );
-};
+  )
+}
