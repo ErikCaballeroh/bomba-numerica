@@ -23,7 +23,6 @@ import { MinimosCuadradosCubicaModule } from './minimosCuadrados/MinimosCuadrado
 import { MinimosCuadradosLinealFuncionModule } from './minimosCuadrados/MinimosCuadradosLinealFuncionModule'
 import { MinimosCuadradosCuadraticaFuncionModule } from './minimosCuadrados/MinimosCuadradosCuadraticaFuncionModule'
 
-import { IntegracionGeneralModule } from './integracion/IntegracionGeneralModule'
 import { IntegracionSimpsonUnTercioModule } from './integracion/IntegracionSimpsonUnTercioModule'
 import { IntegracionSimpsonTresOctavosModule } from './integracion/IntegracionSimpsonTresOctavosModule'
 import { IntegracionNewtonCotesCerradasModule } from './integracion/IntegracionNewtonCotesCerradasModule'
@@ -62,7 +61,6 @@ export const MODULE_COMPONENTS = {
   MINIMOS_CUADRADOS_LINEAL_FUNCION: MinimosCuadradosLinealFuncionModule,
   MINIMOS_CUADRADOS_CUADRATICA_FUNCION: MinimosCuadradosCuadraticaFuncionModule,
 
-  INTEGRACION_GENERAL: IntegracionGeneralModule,
   INTEGRACION_SIMPSON_UN_TERCIO: IntegracionSimpsonUnTercioModule,
   INTEGRACION_SIMPSON_TRES_OCTAVOS: IntegracionSimpsonTresOctavosModule,
   INTEGRACION_NEWTON_COTES_CERRADAS: IntegracionNewtonCotesCerradasModule,
@@ -126,7 +124,6 @@ export const MODULE_TOPICS = [
     id: 'INTEGRACION',
     title: 'Integracion',
     modules: [
-      { id: 'INTEGRACION_GENERAL', title: 'Integracion' },
       { id: 'INTEGRACION_SIMPSON_UN_TERCIO', title: 'Regla 1/3 Simpson' },
       { id: 'INTEGRACION_SIMPSON_TRES_OCTAVOS', title: 'Regla 3/8 Simpson' },
       { id: 'INTEGRACION_NEWTON_COTES_CERRADAS', title: 'Newton-Cotes cerradas' },
