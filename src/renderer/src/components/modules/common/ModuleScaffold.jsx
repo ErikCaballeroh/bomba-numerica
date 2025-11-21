@@ -28,13 +28,13 @@ export const ModuleScaffold = ({
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <button
+        {/* <button
           type="button"
           onClick={() => trigger(onError)}
           className="rounded-xl border border-rose-400/60 px-4 py-2 text-sm font-semibold text-rose-200 transition hover:bg-rose-400/10"
         >
           Reportar error
-        </button>
+        </button> */}
         <div className="flex gap-3">
           <button
             type="button"
@@ -43,13 +43,13 @@ export const ModuleScaffold = ({
           >
             Cerrar
           </button>
-          <button
+          {/* <button
             type="button"
             onClick={() => trigger(onComplete)}
             className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-emerald-500"
           >
             Marcar completado
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

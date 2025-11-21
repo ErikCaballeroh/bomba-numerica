@@ -5,578 +5,479 @@ import { ModuleScaffold } from '../common/ModuleScaffold'
 // Utilidades
 // -------------------------
 const getRandomFrom = (arr) => arr[Math.floor(Math.random() * arr.length)]
-const roundToDecimal = (num, decimals = 8) => parseFloat(num.toFixed(decimals))
 
-// Pool de sistemas de ecuaciones predefinidos
-const systemsPool = [
+// -------------------------
+// Componente de Cable Visual Horizontal
+// -------------------------
+const CableVisual = ({ color, isCut, onClick, disabled }) => {
+  const colorMap = {
+    blue: 'bg-blue-500',
+    green: 'bg-green-500',
+    red: 'bg-red-500'
+  }
+
+  const colorShadow = {
+    blue: 'rgba(59,130,246, 0.6)',
+    green: 'rgba(34,197,94, 0.6)',
+    red: 'rgba(239,68,68, 0.6)'
+  }
+
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="relative flex flex-col items-center gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {/* Cable horizontal delgado */}
+      <div className="relative w-50 h-1.5 group">
+        {!isCut ? (
+          <>
+            {/* Cable intacto */}
+            <div
+              className={`absolute inset-0 rounded-full ${colorMap[color]} transition-shadow duration-300 group-hover:shadow-lg`}
+              style={{
+                boxShadow: `0 0 12px ${colorShadow[color]}`
+              }}
+            />
+            {/* Brillo en el cable */}
+            <div
+              className="absolute left-1/4 top-1/2 transform -translate-y-1/2 w-8 h-0.5 rounded-full opacity-50 blur"
+              style={{
+                background: `linear-gradient(to right, rgba(255,255,255,0.8), transparent)`
+              }}
+            />
+          </>
+        ) : (
+          <>
+            {/* Cable cortado - dos mitades separadas */}
+            <div
+              className={`absolute left-0 top-0 w-1/3 h-full ${colorMap[color]} rounded-l-full transform -translate-x-1`}
+              style={{
+                boxShadow: `0 0 10px ${colorShadow[color]}`
+              }}
+            />
+            <div
+              className={`absolute right-0 top-0 w-1/3 h-full ${colorMap[color]} rounded-r-full transform translate-x-1`}
+              style={{
+                boxShadow: `0 0 10px ${colorShadow[color]}`
+              }}
+            />
+            {/* Chispa en el centro */}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-sm animate-pulse">
+              ⚡
+            </div>
+          </>
+        )}
+      </div>
+    </button>
+  )
+}
+
+// Pool de 10 sistemas de ecuaciones predefinidos
+const problemsPool = [
   {
-    name: "Sistema 1",
-    matrix: [
-      [3, -2, 1, 2],
-      [4, 3, -5, 4],
-      [2, 1, -1, 3]
-    ],
-    solution: { x: 21/16, y: 25/16, z: 19/16 }
+    eq1: { a11: 3, a12: -2, a13: 1, b1: 2 },
+    eq2: { a21: 4, a22: 3, a23: -5, b2: 4 },
+    eq3: { a31: 2, a32: 1, a33: -1, b3: 3 }
   },
   {
-    name: "Sistema 2",
-    matrix: [
-      [2, 1, -1, 8],
-      [-3, -1, 2, -11],
-      [-2, 1, 2, -3]
-    ],
-    solution: { x: 2, y: 3, z: -1 }
+    eq1: { a11: 2, a12: 1, a13: -1, b1: 8 },
+    eq2: { a21: -3, a22: -1, a23: 2, b2: -11 },
+    eq3: { a31: -2, a32: 1, a33: 2, b3: -3 }
   },
   {
-    name: "Sistema 3",
-    matrix: [
-      [1, 1, 1, 6],
-      [2, -1, 1, 3],
-      [1, 2, -1, 0]
-    ],
-    solution: { x: 1, y: 2, z: 3 }
+    eq1: { a11: 1, a12: 1, a13: 1, b1: 6 },
+    eq2: { a21: 2, a22: -1, a23: 1, b2: 3 },
+    eq3: { a31: 1, a32: 2, a33: -1, b3: 0 }
   },
   {
-    name: "Sistema 4",
-    matrix: [
-      [2, -1, 3, 9],
-      [1, 1, 1, 6],
-      [3, -2, 1, 4]
-    ],
-    solution: { x: 2, y: 1, z: 3 }
+    eq1: { a11: 2, a12: -1, a13: 3, b1: 9 },
+    eq2: { a21: 1, a22: 1, a23: 1, b2: 6 },
+    eq3: { a31: 3, a32: -2, a33: 1, b3: 4 }
   },
   {
-    name: "Sistema 5",
-    matrix: [
-      [1, -2, 3, 7],
-      [2, 1, 1, 4],
-      [-3, 2, -2, -10]
-    ],
-    solution: { x: 1, y: -1, z: 2 }
+    eq1: { a11: 1, a12: -2, a13: 3, b1: 7 },
+    eq2: { a21: 2, a22: 1, a23: 1, b2: 4 },
+    eq3: { a31: -3, a32: 2, a33: -2, b3: -10 }
   },
   {
-    name: "Sistema 6",
-    matrix: [
-      [2, 3, -1, 5],
-      [4, 4, -3, 3],
-      [-2, 3, -1, 7]
-    ],
-    solution: { x: -1, y: 2, z: -3 }
+    eq1: { a11: 2, a12: 3, a13: -1, b1: 5 },
+    eq2: { a21: 4, a22: 4, a23: -3, b2: 3 },
+    eq3: { a31: -2, a32: 3, a33: -1, b3: 7 }
+  },
+  {
+    eq1: { a11: 3, a12: 1, a13: -2, b1: 4 },
+    eq2: { a21: 1, a22: 2, a23: 1, b2: 7 },
+    eq3: { a31: 2, a32: -1, a33: 3, b3: 5 }
+  },
+  {
+    eq1: { a11: 4, a12: -1, a13: 2, b1: 11 },
+    eq2: { a21: 1, a22: 3, a23: -1, b2: 4 },
+    eq3: { a31: 2, a32: 1, a33: 1, b3: 7 }
+  },
+  {
+    eq1: { a11: 1, a12: 1, a13: -1, b1: 2 },
+    eq2: { a21: 3, a22: -1, a23: 2, b2: 8 },
+    eq3: { a31: 2, a32: 2, a33: 1, b3: 9 }
+  },
+  {
+    eq1: { a11: 2, a12: -1, a13: 1, b1: 3 },
+    eq2: { a21: 1, a22: 2, a23: -3, b2: -4 },
+    eq3: { a31: 3, a32: 1, a33: 2, b3: 10 }
   }
 ]
 
 // Algoritmo de Gauss-Jordan
-const gaussJordanMethod = (matrix) => {
-  const steps = []
-  let currentMatrix = matrix.map(row => [...row])
-  
-  // Paso 0: Matriz inicial
-  steps.push({
-    stage: 0,
-    matrix: currentMatrix.map(row => [...row]),
-    pivot: null,
-    operation: "Matriz inicial",
-    description: "Matriz aumentada del sistema"
-  })
-  
-  // Etapa 1: Primer pivote (posición 0,0)
-  const pivot1 = currentMatrix[0][0]
-  
-  // Normalizar fila 1: F1 ← (1/pivot1) × F1
+const gaussJordanMethod = (p) => {
+  // Crear matriz aumentada
+  let matrix = [
+    [p.eq1.a11, p.eq1.a12, p.eq1.a13, p.eq1.b1],
+    [p.eq2.a21, p.eq2.a22, p.eq2.a23, p.eq2.b2],
+    [p.eq3.a31, p.eq3.a32, p.eq3.a33, p.eq3.b3]
+  ]
+
+  const round = (num) => parseFloat(num.toFixed(10))
+
+  console.log('=== Ecuaciones Lineales - Método de Gauss-Jordan ===')
+  console.log('Sistema:')
+  console.log(
+    `${p.eq1.a11}x ${p.eq1.a12 >= 0 ? '+' : ''}${p.eq1.a12}y ${p.eq1.a13 >= 0 ? '+' : ''}${p.eq1.a13}z = ${p.eq1.b1}`
+  )
+  console.log(
+    `${p.eq2.a21}x ${p.eq2.a22 >= 0 ? '+' : ''}${p.eq2.a22}y ${p.eq2.a23 >= 0 ? '+' : ''}${p.eq2.a23}z = ${p.eq2.b2}`
+  )
+  console.log(
+    `${p.eq3.a31}x ${p.eq3.a32 >= 0 ? '+' : ''}${p.eq3.a32}y ${p.eq3.a33 >= 0 ? '+' : ''}${p.eq3.a33}z = ${p.eq3.b3}`
+  )
+  console.log('\nProceso de eliminación:')
+
+  // Etapa 1: Primer pivote (a11)
+  const pivot1 = matrix[0][0]
   for (let j = 0; j < 4; j++) {
-    currentMatrix[0][j] = roundToDecimal(currentMatrix[0][j] / pivot1)
+    matrix[0][j] = round(matrix[0][j] / pivot1)
   }
-  
-  steps.push({
-    stage: 1,
-    matrix: currentMatrix.map(row => [...row]),
-    pivot: 1,
-    operation: `F1 ← (1/${pivot1}) × F1`,
-    description: "Normalizar pivote a₁₁ = 1"
-  })
-  
-  // Eliminar debajo del pivote: F2 ← F2 - a₂₁×F1, F3 ← F3 - a₃₁×F1
-  const a21 = currentMatrix[1][0]
-  const a31 = currentMatrix[2][0]
-  
+  console.log(`Paso 1: Normalizar F1 (dividir por ${pivot1})`)
+
+  const a21 = matrix[1][0]
+  const a31 = matrix[2][0]
   for (let j = 0; j < 4; j++) {
-    currentMatrix[1][j] = roundToDecimal(currentMatrix[1][j] - a21 * currentMatrix[0][j])
-    currentMatrix[2][j] = roundToDecimal(currentMatrix[2][j] - a31 * currentMatrix[0][j])
+    matrix[1][j] = round(matrix[1][j] - a21 * matrix[0][j])
+    matrix[2][j] = round(matrix[2][j] - a31 * matrix[0][j])
   }
-  
-  steps.push({
-    stage: 2,
-    matrix: currentMatrix.map(row => [...row]),
-    pivot: 1,
-    operation: `F2 ← F2 - (${a21})×F1, F3 ← F3 - (${a31})×F1`,
-    description: "Hacer ceros debajo del pivote a₁₁"
-  })
-  
-  // Etapa 2: Segundo pivote (posición 1,1)
-  const pivot2 = currentMatrix[1][1]
-  
-  // Normalizar fila 2: F2 ← (1/pivot2) × F2
+  console.log(`Paso 2: Eliminar debajo de a11`)
+
+  // Etapa 2: Segundo pivote (a22)
+  const pivot2 = matrix[1][1]
   for (let j = 0; j < 4; j++) {
-    currentMatrix[1][j] = roundToDecimal(currentMatrix[1][j] / pivot2)
+    matrix[1][j] = round(matrix[1][j] / pivot2)
   }
-  
-  steps.push({
-    stage: 3,
-    matrix: currentMatrix.map(row => [...row]),
-    pivot: 2,
-    operation: `F2 ← (1/${pivot2}) × F2`,
-    description: "Normalizar pivote a₂₂ = 1"
-  })
-  
-  // Eliminar arriba y debajo del pivote: F1 ← F1 - a₁₂×F2, F3 ← F3 - a₃₂×F2
-  const a12 = currentMatrix[0][1]
-  const a32 = currentMatrix[2][1]
-  
+  console.log(`Paso 3: Normalizar F2 (dividir por ${pivot2})`)
+
+  const a12 = matrix[0][1]
+  const a32 = matrix[2][1]
   for (let j = 0; j < 4; j++) {
-    currentMatrix[0][j] = roundToDecimal(currentMatrix[0][j] - a12 * currentMatrix[1][j])
-    currentMatrix[2][j] = roundToDecimal(currentMatrix[2][j] - a32 * currentMatrix[1][j])
+    matrix[0][j] = round(matrix[0][j] - a12 * matrix[1][j])
+    matrix[2][j] = round(matrix[2][j] - a32 * matrix[1][j])
   }
-  
-  steps.push({
-    stage: 4,
-    matrix: currentMatrix.map(row => [...row]),
-    pivot: 2,
-    operation: `F1 ← F1 - (${a12})×F2, F3 ← F3 - (${a32})×F2`,
-    description: "Hacer ceros arriba y debajo del pivote a₂₂"
-  })
-  
-  // Etapa 3: Tercer pivote (posición 2,2)
-  const pivot3 = currentMatrix[2][2]
-  
-  // Normalizar fila 3: F3 ← (1/pivot3) × F3
+  console.log(`Paso 4: Eliminar arriba y debajo de a22`)
+
+  // Etapa 3: Tercer pivote (a33)
+  const pivot3 = matrix[2][2]
   for (let j = 0; j < 4; j++) {
-    currentMatrix[2][j] = roundToDecimal(currentMatrix[2][j] / pivot3)
+    matrix[2][j] = round(matrix[2][j] / pivot3)
   }
-  
-  steps.push({
-    stage: 5,
-    matrix: currentMatrix.map(row => [...row]),
-    pivot: 3,
-    operation: `F3 ← (1/${pivot3}) × F3`,
-    description: "Normalizar pivote a₃₃ = 1"
-  })
-  
-  // Eliminar arriba del pivote: F1 ← F1 - a₁₃×F3, F2 ← F2 - a₂₃×F3
-  const a13 = currentMatrix[0][2]
-  const a23 = currentMatrix[1][2]
-  
+  console.log(`Paso 5: Normalizar F3 (dividir por ${pivot3})`)
+
+  const a13 = matrix[0][2]
+  const a23 = matrix[1][2]
   for (let j = 0; j < 4; j++) {
-    currentMatrix[0][j] = roundToDecimal(currentMatrix[0][j] - a13 * currentMatrix[2][j])
-    currentMatrix[1][j] = roundToDecimal(currentMatrix[1][j] - a23 * currentMatrix[2][j])
+    matrix[0][j] = round(matrix[0][j] - a13 * matrix[2][j])
+    matrix[1][j] = round(matrix[1][j] - a23 * matrix[2][j])
   }
-  
-  steps.push({
-    stage: 6,
-    matrix: currentMatrix.map(row => [...row]),
-    pivot: 3,
-    operation: `F1 ← F1 - (${a13})×F3, F2 ← F2 - (${a23})×F3`,
-    description: "Hacer ceros arriba del pivote a₃₃"
-  })
-  
-  // Calcular soluciones
-  const solutions = {
-    x: roundToDecimal(currentMatrix[0][3]),
-    y: roundToDecimal(currentMatrix[1][3]),
-    z: roundToDecimal(currentMatrix[2][3])
-  }
-  
-  return {
-    steps,
-    solutions,
-    finalMatrix: currentMatrix
-  }
+  console.log(`Paso 6: Eliminar arriba de a33`)
+
+  const x = round(matrix[0][3])
+  const y = round(matrix[1][3])
+  const z = round(matrix[2][3])
+
+  console.log('\n=== Resultado Final ===')
+  console.log('x =', x)
+  console.log('y =', y)
+  console.log('z =', z)
+
+  // Contar soluciones negativas
+  let negativeCount = 0
+  if (x < 0) negativeCount++
+  if (y < 0) negativeCount++
+  if (z < 0) negativeCount++
+
+  let correctColor = ''
+  if (negativeCount === 0) correctColor = 'blue'
+  else if (negativeCount === 1) correctColor = 'green'
+  else correctColor = 'red'
+
+  console.log('Soluciones negativas =', negativeCount)
+  console.log('Cable =', correctColor)
+
+  return { x, y, z, negativeCount, correctColor }
 }
+
 
 // -------------------------
 // Componente Principal
 // -------------------------
 export const LinealesGaussJordanModule = (props) => {
   const [problem, setProblem] = useState(null)
-  const [gaussJordanResult, setGaussJordanResult] = useState(null)
-  const [userAnswers, setUserAnswers] = useState({})
-  const [selectedWire, setSelectedWire] = useState('')
+  const [xInput, setXInput] = useState('')
+  const [yInput, setYInput] = useState('')
+  const [zInput, setZInput] = useState('')
   const [resultMessage, setResultMessage] = useState('')
-  const [showSolution, setShowSolution] = useState(false)
+  const [cutCable, setCutCable] = useState(null)
   const [isCompleted, setIsCompleted] = useState(false)
-  const [attempts, setAttempts] = useState(0)
   const isActive = props.isActive !== false
 
-  // Generar nuevo problema
+  // -------------------------
+  // Generar problema aleatorio
+  // -------------------------
   useEffect(() => {
-    generateNewProblem()
+    const p = getRandomFrom(problemsPool)
+    const result = gaussJordanMethod(p)
+
+    setProblem({
+      ...p,
+      x: result.x,
+      y: result.y,
+      z: result.z,
+      negativeCount: result.negativeCount,
+      correctColor: result.correctColor
+    })
+
+    setXInput('')
+    setYInput('')
+    setZInput('')
+    setResultMessage('')
+    setCutCable(null)
+    setIsCompleted(false)
   }, [])
 
-  const generateNewProblem = () => {
-    const selectedSystem = getRandomFrom(systemsPool)
-    const result = gaussJordanMethod(selectedSystem.matrix)
-    
-    setProblem({
-      system: selectedSystem,
-      matrix: selectedSystem.matrix
-    })
-    
-    setGaussJordanResult(result)
-    
-    setUserAnswers({
-      x: '',
-      y: '',
-      z: ''
-    })
-    setSelectedWire('')
-    setResultMessage('')
-    setShowSolution(false)
-    setIsCompleted(false)
-  }
+  // Limitación de 8 decimales para todos los inputs
+  const handleInputChange = (setter) => (e) => {
+    const value = e.target.value
 
-  const handleInputChange = (field, value) => {
-    if (!isActive || isCompleted) return
-    
-    // Limitar a 8 decimales
-    let processedValue = value
+    if (value === '-') {
+      setter(value)
+      return
+    }
+
     if (value.includes('.')) {
       const [integer, decimal] = value.split('.')
       if (decimal && decimal.length > 8) {
-        processedValue = `${integer}.${decimal.substring(0, 8)}`
+        setter(`${integer}.${decimal.substring(0, 8)}`)
+        return
       }
     }
-    
-    setUserAnswers(prev => ({
-      ...prev,
-      [field]: processedValue
-    }))
+    setter(value)
   }
 
-  const handleWireSelect = (wire) => {
+  const handleCutCable = (color) => {
     if (!isActive || isCompleted) return
-    setSelectedWire(wire)
-  }
 
-  const countNegativeSolutions = (solutions) => {
-    let count = 0
-    if (solutions.x < 0) count++
-    if (solutions.y < 0) count++
-    if (solutions.z < 0) count++
-    return count
-  }
-
-  const handleVerify = () => {
-    if (!isActive || isCompleted) return
-    
-    const { solutions } = gaussJordanResult
-    const { x, y, z } = userAnswers
-    
-    // Validar respuestas con tolerancia
-    const tolerance = 0.0001
-    
-    const isXCorrect = Math.abs(parseFloat(x) - solutions.x) < tolerance
-    const isYCorrect = Math.abs(parseFloat(y) - solutions.y) < tolerance
-    const isZCorrect = Math.abs(parseFloat(z) - solutions.z) < tolerance
-    
-    // Validar cable seleccionado basado en número de soluciones negativas
-    const negativeCount = countNegativeSolutions(solutions)
-    let isWireCorrect = false
-    
-    switch (selectedWire) {
-      case 'blue':
-        isWireCorrect = negativeCount === 0
-        break
-      case 'green':
-        isWireCorrect = negativeCount === 1
-        break
-      case 'red':
-        isWireCorrect = negativeCount >= 2
-        break
-      default:
-        isWireCorrect = false
+    if (!xInput.trim() || !yInput.trim() || !zInput.trim()) {
+      setResultMessage('❌ Ingresa todos los valores primero')
+      return
     }
-    
-    const allCorrect = isXCorrect && isYCorrect && isZCorrect && isWireCorrect
-    
-    if (allCorrect) {
-      setResultMessage('✅ ¡Módulo completado!')
+
+    const xInputNum = parseFloat(xInput)
+    const yInputNum = parseFloat(yInput)
+    const zInputNum = parseFloat(zInput)
+
+    if (isNaN(xInputNum) || isNaN(yInputNum) || isNaN(zInputNum)) {
+      setResultMessage('❌ Ingresa valores válidos')
+      return
+    }
+
+    setCutCable(color)
+
+    if (!problem) return
+
+    // Validación con precisión de 8 decimales
+    const isXCorrect = Math.abs(xInputNum - problem.x) < 0.00000001
+    const isYCorrect = Math.abs(yInputNum - problem.y) < 0.00000001
+    const isZCorrect = Math.abs(zInputNum - problem.z) < 0.00000001
+
+    if (!isXCorrect || !isYCorrect || !isZCorrect) {
+      setResultMessage('❌ Los valores de x, y o z son incorrectos')
+      props.onError?.()
+      return
+    }
+
+    if (color === problem.correctColor) {
+      setResultMessage('✅ ¡Correcto! Cortaste el cable adecuado.')
       setIsCompleted(true)
+      props.onComplete?.()
     } else {
-      const newAttempts = attempts + 1
-      setAttempts(newAttempts)
-      
-      if (newAttempts >= 2) {
-        setResultMessage('❌ Game Over - Se han agotado los intentos')
-        props.onError?.()
-        setShowSolution(true)
-      } else {
-        setResultMessage('❌ Revisa tus cálculos')
-        setShowSolution(true)
-      }
+      setResultMessage('❌ Cable incorrecto… 💥')
+      props.onError?.()
     }
   }
 
-  const allFieldsFilled = userAnswers.x && userAnswers.y && userAnswers.z && selectedWire
-
-  if (!problem || !gaussJordanResult) {
-    return <p className="text-center">Generando problema...</p>
+  const handleComplete = () => {
+    if (typeof props.onComplete === 'function') {
+      props.onComplete()
+    }
   }
 
-  const { system, matrix } = problem
-  const { steps, solutions } = gaussJordanResult
-  const negativeCount = countNegativeSolutions(solutions)
+  if (!problem) return <p className="text-center">Generando problema...</p>
+
+  const disabledClass = !isActive ? 'opacity-50 cursor-not-allowed' : ''
+  const cablesDisabled =
+    !isActive || !xInput.trim() || !yInput.trim() || !zInput.trim() || isCompleted
 
   return (
     <ModuleScaffold
       {...props}
       topic="Ecuaciones lineales"
-      title="Gauss Jordan"
-      description="Resuelve el sistema de ecuaciones usando el método de Gauss-Jordan"
+      title="Método de Gauss-Jordan"
+      description="Resuelve el sistema de ecuaciones usando el método de Gauss-Jordan."
     >
-      <div className="space-y-6">
-        {/* Sistema de ecuaciones */}
-        <div className="rounded-lg border border-yellow-500/50 bg-yellow-500/5 p-4">
-          <div className="text-sm text-center font-bold text-yellow-300 mb-4">
-            {system.name}
-          </div>
-          <div className="text-center text-white/80 text-sm space-y-2">
-            <div>Ecuación 1: {matrix[0][0]}x {matrix[0][1] >= 0 ? '+' : ''} {matrix[0][1]}y {matrix[0][2] >= 0 ? '+' : ''} {matrix[0][2]}z = {matrix[0][3]}</div>
-            <div>Ecuación 2: {matrix[1][0]}x {matrix[1][1] >= 0 ? '+' : ''} {matrix[1][1]}y {matrix[1][2] >= 0 ? '+' : ''} {matrix[1][2]}z = {matrix[1][3]}</div>
-            <div>Ecuación 3: {matrix[2][0]}x {matrix[2][1] >= 0 ? '+' : ''} {matrix[2][1]}y {matrix[2][2] >= 0 ? '+' : ''} {matrix[2][2]}z = {matrix[2][3]}</div>
-          </div>
+      {/* Problema */}
+      <div
+        className={`space-y-4 rounded-lg border border-yellow-500/50 bg-yellow-500/5 p-4 mb-6 ${disabledClass}`}
+      >
+        <p className="text-sm font-bold">Método de Gauss-Jordan</p>
+
+        <div className="text-xs text-white/70 font-mono">
+          <p>
+            {problem.eq1.a11}x {problem.eq1.a12 >= 0 ? '+' : ''}
+            {problem.eq1.a12}y {problem.eq1.a13 >= 0 ? '+' : ''}
+            {problem.eq1.a13}z = {problem.eq1.b1}
+          </p>
+          <p>
+            {problem.eq2.a21}x {problem.eq2.a22 >= 0 ? '+' : ''}
+            {problem.eq2.a22}y {problem.eq2.a23 >= 0 ? '+' : ''}
+            {problem.eq2.a23}z = {problem.eq2.b2}
+          </p>
+          <p>
+            {problem.eq3.a31}x {problem.eq3.a32 >= 0 ? '+' : ''}
+            {problem.eq3.a32}y {problem.eq3.a33 >= 0 ? '+' : ''}
+            {problem.eq3.a33}z = {problem.eq3.b3}
+          </p>
         </div>
-
-        {/* Matriz aumentada inicial */}
-        <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
-          <div className="text-sm text-center font-bold text-blue-300 mb-3">
-            Matriz Aumentada Inicial
-          </div>
-          <div className="flex justify-center">
-            <div className="text-sm font-mono bg-black/30 p-3 rounded border border-white/20">
-              <div className="flex space-x-4">
-                <div className="text-right">
-                  <div>[{matrix[0][0]}</div>
-                  <div>[{matrix[1][0]}</div>
-                  <div>[{matrix[2][0]}</div>
-                </div>
-                <div className="text-right">
-                  <div>{matrix[0][1]}</div>
-                  <div>{matrix[1][1]}</div>
-                  <div>{matrix[2][1]}</div>
-                </div>
-                <div className="text-right border-r border-white/20 pr-4">
-                  <div>{matrix[0][2]}</div>
-                  <div>{matrix[1][2]}</div>
-                  <div>{matrix[2][2]}</div>
-                </div>
-                <div className="text-right pl-4">
-                  <div>| {matrix[0][3]}]</div>
-                  <div>| {matrix[1][3]}]</div>
-                  <div>| {matrix[2][3]}]</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Proceso de Gauss-Jordan (primeros pasos como referencia) */}
-        <div className="rounded-lg border border-purple-500/30 bg-purple-500/5 p-4">
-          <div className="text-sm text-center font-bold text-purple-300 mb-3">
-            Proceso de Gauss-Jordan (Referencia)
-          </div>
-          <div className="space-y-3 text-sm">
-            {steps.slice(0, 3).map((step, index) => (
-              <div key={index} className="border-b border-white/10 pb-2 last:border-b-0">
-                <div className="text-green-300 font-semibold">{step.operation}</div>
-                <div className="text-white/70 text-xs">{step.description}</div>
-                <div className="text-white/60 text-xs mt-1 font-mono">
-                  {step.matrix.map((row, i) => (
-                    <div key={i}>[{row.slice(0, 3).join(', ')} | {row[3]}]</div>
-                  ))}
-                </div>
-              </div>
-            ))}
-            <div className="text-yellow-300 text-xs text-center">
-              ... continuando hasta matriz identidad
-            </div>
-          </div>
-        </div>
-
-        {/* Inputs para soluciones */}
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <div className="text-center font-bold text-green-300 mb-2">
-              Soluciones del Sistema
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">x:</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-green-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.x}
-                  onChange={(e) => handleInputChange('x', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">y:</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-green-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.y}
-                  onChange={(e) => handleInputChange('y', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm text-white/80">z:</label>
-                <input
-                  type="number"
-                  step="any"
-                  disabled={!isActive || isCompleted}
-                  className="w-32 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-green-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                  value={userAnswers.z}
-                  onChange={(e) => handleInputChange('z', e.target.value)}
-                  placeholder="?"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Información de selección de cable */}
-          <div className="space-y-4">
-            <div className="text-center font-bold text-purple-300 mb-2">
-              Selección del Cable
-            </div>
-            <div className="text-sm text-white/80 space-y-2">
-              <p>Basado en el <strong>número de soluciones negativas</strong>:</p>
-              <div className="text-xs space-y-1">
-                <div>• 0 negativas: Cortar cable <span className="text-blue-300">AZUL</span></div>
-                <div>• 1 negativa: Cortar cable <span className="text-green-300">VERDE</span></div>
-                <div>• 2+ negativas: Cortar cable <span className="text-red-300">ROJO</span></div>
-              </div>
-              <div className="text-yellow-300 text-xs mt-2">
-                Soluciones negativas en este problema: <strong>{negativeCount}</strong>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Selección de cable */}
-        <div className="space-y-4">
-          <div className="text-center font-bold text-red-300 mb-2">
-            Selecciona el cable según el número de soluciones negativas
-          </div>
-          
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              onClick={() => handleWireSelect('blue')}
-              disabled={!isActive || isCompleted}
-              className={`py-3 rounded border-2 font-semibold transition-all ${
-                selectedWire === 'blue'
-                  ? 'bg-blue-600 border-blue-400 text-white'
-                  : 'bg-blue-900/30 border-blue-700 text-blue-300 hover:bg-blue-800/40'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              Azul (0 negativas)
-            </button>
-            
-            <button
-              onClick={() => handleWireSelect('green')}
-              disabled={!isActive || isCompleted}
-              className={`py-3 rounded border-2 font-semibold transition-all ${
-                selectedWire === 'green'
-                  ? 'bg-green-600 border-green-400 text-white'
-                  : 'bg-green-900/30 border-green-700 text-green-300 hover:bg-green-800/40'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              Verde (1 negativa)
-            </button>
-            
-            <button
-              onClick={() => handleWireSelect('red')}
-              disabled={!isActive || isCompleted}
-              className={`py-3 rounded border-2 font-semibold transition-all ${
-                selectedWire === 'red'
-                  ? 'bg-red-600 border-red-400 text-white'
-                  : 'bg-red-900/30 border-red-700 text-red-300 hover:bg-red-800/40'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              Rojo (2+ negativas)
-            </button>
-          </div>
-        </div>
-
-        {/* Botón de verificación */}
-        {!isCompleted && allFieldsFilled && (
-          <div className="flex justify-center">
-            <button
-              onClick={handleVerify}
-              disabled={!isActive}
-              className="px-6 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-lg font-semibold transition-colors"
-            >
-              Verificar Solución
-            </button>
-          </div>
-        )}
-
-        {resultMessage && (
-          <div
-            className={`p-4 text-center text-sm font-bold rounded-lg ${
-              resultMessage.includes('✅')
-                ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
-                : resultMessage.includes('Game Over')
-                ? 'bg-red-600/40 border border-red-500/60 text-red-200'
-                : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
-            }`}
-          >
-            {resultMessage}
-            {isCompleted && (
-              <div className="mt-2">
-                <button
-                  onClick={() => props.onComplete && props.onComplete()}
-                  className="px-4 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors"
-                >
-                  Cerrar Módulo
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Solución en caso de error */}
-        {showSolution && problem && !isCompleted && (
-          <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-4">
-            <div className="text-sm text-center text-emerald-300 mb-3 font-bold">
-              SOLUCIÓN CORRECTA
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="space-y-1">
-                <div className="text-emerald-200">Soluciones:</div>
-                <div className="font-mono">x = {solutions.x}</div>
-                <div className="font-mono">y = {solutions.y}</div>
-                <div className="font-mono">z = {solutions.z}</div>
-              </div>
-              <div className="space-y-1">
-                <div className="text-emerald-200">Información del cable:</div>
-                <div className="font-mono">
-                  Soluciones negativas: {negativeCount}
-                </div>
-                <div className="text-yellow-300">
-                  Cable correcto: {
-                    negativeCount === 0 ? 'AZUL' :
-                    negativeCount === 1 ? 'VERDE' : 'ROJO'
-                  }
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Ejercicio y Cables */}
+      <div className={`grid grid-cols-2 gap-6 mb-6 ${disabledClass}`}>
+        {/* Entrada de valores */}
+        <div className="space-y-3">
+          <div className="rounded-lg border border-blue-500/50 bg-blue-500/5 p-3">
+            <label className="block text-xs font-semibold text-blue-300 mb-2">
+              Soluciones del sistema:
+            </label>
+            <div className="space-y-2">
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-blue-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={xInput}
+                onChange={handleInputChange(setXInput)}
+                placeholder="x = 0.00000000"
+              />
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-blue-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={yInput}
+                onChange={handleInputChange(setYInput)}
+                placeholder="y = 0.00000000"
+              />
+              <input
+                type="number"
+                disabled={!isActive || isCompleted}
+                className="w-full rounded border border-white/20 bg-black/40 px-2 py-1.5 text-xs text-white outline-none focus:border-blue-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                value={zInput}
+                onChange={handleInputChange(setZInput)}
+                placeholder="z = 0.00000000"
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Caja de cables */}
+        <div className="rounded-lg border border-red-500/50 bg-red-500/5 p-6">
+          <h3 className="text-sm font-semibold text-red-300 mb-4 text-center">Corta un cable</h3>
+
+          <div className="flex flex-col items-center gap-10">
+            <CableVisual
+              color="blue"
+              isCut={cutCable === 'blue'}
+              onClick={() => handleCutCable('blue')}
+              disabled={cablesDisabled}
+            />
+
+            <CableVisual
+              color="green"
+              isCut={cutCable === 'green'}
+              onClick={() => handleCutCable('green')}
+              disabled={cablesDisabled}
+            />
+
+            <CableVisual
+              color="red"
+              isCut={cutCable === 'red'}
+              onClick={() => handleCutCable('red')}
+              disabled={cablesDisabled}
+            />
+          </div>
+
+          {(!xInput.trim() || !yInput.trim() || !zInput.trim()) && (
+            <div className="text-xs text-center text-red-300/70 mt-4">
+              Ingresa todos los valores para activar los cables
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Resultado */}
+      {resultMessage && (
+        <div
+          className={`p-3 text-center text-sm font-bold rounded-lg mb-6 ${resultMessage.includes('Correcto')
+            ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+            : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+            }`}
+        >
+          {resultMessage}
+          {isCompleted && (
+            <div className="mt-2">
+              <button
+                onClick={handleComplete}
+                className="px-4 py-1 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-semibold transition-colors"
+              >
+                Cerrar Módulo
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Solución (solo al completar) */}
+      {isCompleted && (
+        <div className="rounded-lg border border-white/10 bg-black/30 p-3 text-xs text-white/70">
+          <p className="font-semibold text-white mb-1.5">Solución oficial:</p>
+          <p>
+            x = <span className="text-emerald-300">{problem.x.toFixed(8)}</span>
+          </p>
+          <p>
+            y = <span className="text-emerald-300">{problem.y.toFixed(8)}</span>
+          </p>
+          <p>
+            z = <span className="text-emerald-300">{problem.z.toFixed(8)}</span>
+          </p>
+          <p className="mt-2">
+            Soluciones negativas ={' '}
+            <span className="text-emerald-300">{problem.negativeCount}</span>
+          </p>
+        </div>
+      )}
     </ModuleScaffold>
   )
 }
