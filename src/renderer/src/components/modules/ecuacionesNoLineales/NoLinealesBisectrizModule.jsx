@@ -52,7 +52,6 @@ const calculateBisection = (func, a, b, tolerance, maxIterations = 50) => {
   let currentA = a
   let currentB = b
   let prevX = null
-  let currentX = null
   
   for (let i = 0; i < maxIterations; i++) {
     currentX = (currentA + currentB) / 2
@@ -65,9 +64,7 @@ const calculateBisection = (func, a, b, tolerance, maxIterations = 50) => {
       a: currentA,
       b: currentB,
       x: currentX,
-      error: error,
-      fa: fa,
-      fx: fx
+      error: error
     })
     
     // Verificar convergencia
@@ -85,12 +82,27 @@ const calculateBisection = (func, a, b, tolerance, maxIterations = 50) => {
     prevX = currentX
   }
   
-  return { iterations, finalX: currentX }
+  return iterations
+}
+
+// Obtener el cuarto decimal de un número
+const getFourthDecimal = (number) => {
+  if (number === null || number === undefined) return null
+  const numberStr = Math.abs(number).toString()
+  const decimalIndex = numberStr.indexOf('.')
+  
+  if (decimalIndex === -1) return 0
+  
+  const decimalPart = numberStr.substring(decimalIndex + 1)
+  return decimalPart.length >= 4 ? parseInt(decimalPart[3]) : 0
 }
 
 export const NoLinealesBisectrizModule = (props) => {
   const [problem, setProblem] = useState(null)
-  const [lastIterations, setLastIterations] = useState({ a: '', b: '', x: '' })
+  const [lastTwoIterations, setLastTwoIterations] = useState({
+    penultimate: { a: '', b: '', x: '' },
+    last: { a: '', b: '', x: '' }
+  })
   const [error, setError] = useState('')
   const [cutCable, setCutCable] = useState(null)
   const [resultMessage, setResultMessage] = useState('')
@@ -119,40 +131,36 @@ export const NoLinealesBisectrizModule = (props) => {
       b: 1,
       tolerance: 0.001,
       description: "f(x) = cos(x) - x"
-    },
-    {
-      function: (x) => Math.exp(x) - 3*x,
-      a: 0,
-      b: 1,
-      tolerance: 0.001,
-      description: "f(x) = eˣ - 3x"
     }
   ]
 
   // Generar problema aleatorio
   useEffect(() => {
     const selectedProblem = getRandomFrom(problemsPool)
-    const { iterations, finalX } = calculateBisection(
+    const iterations = calculateBisection(
       selectedProblem.function,
       selectedProblem.a,
       selectedProblem.b,
       selectedProblem.tolerance
     )
     
-    // Obtener las últimas dos iteraciones para la verificación
-    const lastIter = iterations[iterations.length - 1]
-    const secondLastIter = iterations[iterations.length - 2]
+    // Obtener las últimas DOS iteraciones como pide el manual
+    const lastIteration = iterations[iterations.length - 1]
+    const penultimateIteration = iterations[iterations.length - 2]
     
     setProblem({
       ...selectedProblem,
       iterations,
-      finalX,
-      lastIteration: lastIter,
-      secondLastIteration: secondLastIter,
-      correctError: lastIter.error
+      lastIteration,
+      penultimateIteration,
+      correctError: lastIteration.error,
+      fourthDecimal: getFourthDecimal(lastIteration.error)
     })
     
-    setLastIterations({ a: '', b: '', x: '' })
+    setLastTwoIterations({
+      penultimate: { a: '', b: '', x: '' },
+      last: { a: '', b: '', x: '' }
+    })
     setError('')
     setCutCable(null)
     setResultMessage('')
@@ -160,20 +168,27 @@ export const NoLinealesBisectrizModule = (props) => {
   }, [])
 
   // ✅ FUNCIÓN DE LIMITACIÓN DE 8 DECIMALES
-  const handleValueChange = (field, value) => {
+  const handleValueChange = (iteration, field, value) => {
     if (value.includes('.')) {
       const [integer, decimal] = value.split('.')
       if (decimal && decimal.length > 8) {
-        setLastIterations(prev => ({
+        setLastTwoIterations(prev => ({
           ...prev,
-          [field]: `${integer}.${decimal.substring(0, 8)}`
+          [iteration]: {
+            ...prev[iteration],
+            [field]: `${integer}.${decimal.substring(0, 8)}`
+          }
         }))
         return
       }
     }
-    setLastIterations(prev => ({
+    
+    setLastTwoIterations(prev => ({
       ...prev,
-      [field]: value
+      [iteration]: {
+        ...prev[iteration],
+        [field]: value
+      }
     }))
   }
 
@@ -191,42 +206,62 @@ export const NoLinealesBisectrizModule = (props) => {
   const handleCutCable = (color) => {
     if (!isActive || !problem || isCompleted) return
 
-    // Verificar que todos los campos estén completos
-    if (!lastIterations.a.trim() || !lastIterations.b.trim() || !lastIterations.x.trim() || !error.trim()) {
+    // Verificar que TODOS los campos estén completos (6 valores + error)
+    const { penultimate, last } = lastTwoIterations
+    const allFieldsComplete = 
+      penultimate.a.trim() && penultimate.b.trim() && penultimate.x.trim() &&
+      last.a.trim() && last.b.trim() && last.x.trim() && 
+      error.trim()
+
+    if (!allFieldsComplete) {
       setResultMessage('❌ Completa todos los campos primero')
       return
     }
 
-    const aNum = parseFloat(lastIterations.a)
-    const bNum = parseFloat(lastIterations.b)
-    const xNum = parseFloat(lastIterations.x)
-    const errorNum = parseFloat(error)
+    // Validar todos los valores numéricos
+    const values = [
+      parseFloat(penultimate.a), parseFloat(penultimate.b), parseFloat(penultimate.x),
+      parseFloat(last.a), parseFloat(last.b), parseFloat(last.x),
+      parseFloat(error)
+    ]
     
-    if (isNaN(aNum) || isNaN(bNum) || isNaN(xNum) || isNaN(errorNum)) {
+    if (values.some(isNaN)) {
       setResultMessage('❌ Ingresa valores válidos')
       return
     }
 
     setCutCable(color)
     
-    // ✅ PRECISIÓN DE 8 DECIMALES para las soluciones
+    // ✅ PRECISIÓN DE 8 DECIMALES para todas las soluciones
     const solutionsCorrect = 
-      Math.abs(aNum - problem.lastIteration.a) < 0.00000001 &&
-      Math.abs(bNum - problem.lastIteration.b) < 0.00000001 &&
-      Math.abs(xNum - problem.lastIteration.x) < 0.00000001 &&
-      Math.abs(errorNum - problem.correctError) < 0.00000001
+      Math.abs(values[0] - problem.penultimateIteration.a) < 0.00000001 &&
+      Math.abs(values[1] - problem.penultimateIteration.b) < 0.00000001 &&
+      Math.abs(values[2] - problem.penultimateIteration.x) < 0.00000001 &&
+      Math.abs(values[3] - problem.lastIteration.a) < 0.00000001 &&
+      Math.abs(values[4] - problem.lastIteration.b) < 0.00000001 &&
+      Math.abs(values[5] - problem.lastIteration.x) < 0.00000001 &&
+      Math.abs(values[6] - problem.correctError) < 0.00000001
 
     if (solutionsCorrect) {
-      // ✅ ESTRICTAMENTE SEGÚN MANUAL: TODOS los casos cortan cable AZUL
-      // 0-3 → azul, 4-6 → azul, 7-9 → azul
-      const correctColor = 'blue'
+      // ✅ LÓGICA DE CABLES SEGÚN MANUAL: Basado en cuarto decimal del error
+      const fourthDecimal = problem.fourthDecimal
+      let correctColor = ''
+      
+      if (fourthDecimal >= 0 && fourthDecimal <= 3) {
+        correctColor = 'blue'
+      } else if (fourthDecimal >= 4 && fourthDecimal <= 6) {
+        correctColor = 'blue'
+      } else {
+        correctColor = 'blue'
+      }
+      // NOTA: El manual dice que TODOS los casos son cable AZUL
       
       if (color === correctColor) {
         setResultMessage('✅ ¡Correcto! Módulo terminado')
         setIsCompleted(true)
         props.onComplete?.()
       } else {
-        setResultMessage('❌ Error: Según el manual debe cortar cable AZUL')
+        setResultMessage('❌ Cable incorrecto - Debe ser AZUL')
         props.onError?.()
       }
     } else {
@@ -246,7 +281,11 @@ export const NoLinealesBisectrizModule = (props) => {
   }
 
   const disabledClass = !isActive ? 'opacity-50 cursor-not-allowed' : ''
-  const allFieldsComplete = lastIterations.a.trim() && lastIterations.b.trim() && lastIterations.x.trim() && error.trim()
+  const { penultimate, last } = lastTwoIterations
+  const allFieldsComplete = 
+    penultimate.a.trim() && penultimate.b.trim() && penultimate.x.trim() &&
+    last.a.trim() && last.b.trim() && last.x.trim() && 
+    error.trim()
   const cablesDisabled = !isActive || !allFieldsComplete || isCompleted
 
   return (
@@ -272,10 +311,10 @@ export const NoLinealesBisectrizModule = (props) => {
             </div>
           </div>
 
-          {/* Última iteración */}
+          {/* Penúltima iteración */}
           <div className={`rounded-lg border border-purple-500/50 bg-purple-500/5 p-4 mb-4 ${disabledClass}`}>
             <label className="block text-sm text-purple-300 mb-3 text-center font-bold">
-              ÚLTIMA ITERACIÓN
+              PENÚLTIMA ITERACIÓN (i = {problem.penultimateIteration?.iteration})
             </label>
             <div className="grid grid-cols-3 gap-4">
               {['a', 'b', 'x'].map((variable) => (
@@ -285,8 +324,30 @@ export const NoLinealesBisectrizModule = (props) => {
                     type="number"
                     disabled={!isActive || isCompleted}
                     className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
-                    value={lastIterations[variable]}
-                    onChange={(e) => handleValueChange(variable, e.target.value)}
+                    value={lastTwoIterations.penultimate[variable]}
+                    onChange={(e) => handleValueChange('penultimate', variable, e.target.value)}
+                    placeholder="0.00000000"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Última iteración */}
+          <div className={`rounded-lg border border-purple-500/50 bg-purple-500/5 p-4 mb-4 ${disabledClass}`}>
+            <label className="block text-sm text-purple-300 mb-3 text-center font-bold">
+              ÚLTIMA ITERACIÓN (i = {problem.lastIteration?.iteration})
+            </label>
+            <div className="grid grid-cols-3 gap-4">
+              {['a', 'b', 'x'].map((variable) => (
+                <div key={variable} className="text-center">
+                  <div className="text-sm text-purple-300 mb-2">{variable}</div>
+                  <input
+                    type="number"
+                    disabled={!isActive || isCompleted}
+                    className="w-full rounded-lg border border-white/20 bg-black/40 px-3 py-2 text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
+                    value={lastTwoIterations.last[variable]}
+                    onChange={(e) => handleValueChange('last', variable, e.target.value)}
                     placeholder="0.00000000"
                   />
                 </div>
