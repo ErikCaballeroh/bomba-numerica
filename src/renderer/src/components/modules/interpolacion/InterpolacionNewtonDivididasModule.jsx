@@ -210,7 +210,7 @@ export const InterpolacionNewtonDivididasModule = (props) => {
   return (
     <ModuleScaffold
       {...props}
-      topic="Interpolacion"
+      topic="Interpolación"
       title="Newton Diferencias Divididas"
       description="Resuelve con precisión de 8 decimales"
     >

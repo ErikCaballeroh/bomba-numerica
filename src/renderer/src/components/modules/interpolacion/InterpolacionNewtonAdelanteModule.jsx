@@ -241,7 +241,7 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
   return (
     <ModuleScaffold
       {...props}
-      topic="Interpolacion"
+      topic="Interpolación"
       title="Newton hacia adelante"
       description="Resuelve con precisión de 8 decimales"
     >
@@ -324,8 +324,8 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
           {resultMessage && (
             <div
               className={`p-4 text-center text-sm font-bold rounded-lg ${resultMessage.includes('Correcto')
-                  ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
-                  : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+                ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+                : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
                 }`}
             >
               {resultMessage}

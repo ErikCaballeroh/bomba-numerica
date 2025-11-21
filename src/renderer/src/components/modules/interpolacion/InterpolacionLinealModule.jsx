@@ -221,8 +221,8 @@ export const InterpolacionLinealModule = (props) => {
   return (
     <ModuleScaffold
       {...props}
-      topic="Interpolacion"
-      title="Interpolacion Lineal"
+      topic="Interpolación"
+      title="Lineal"
       description="Resuelve el problema de interpolación lineal y corta el cable correcto."
     >
       {/* Problema */}

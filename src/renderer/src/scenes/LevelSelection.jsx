@@ -12,7 +12,7 @@ const BASE_LEVELS = [
     { id: 2, name: 'Ecuaciones no lineales', color: 'from-yellow-400 to-orange-500', locked: false },
     { id: 3, name: 'Ecuaciones lineales', color: 'from-orange-500 to-red-600', locked: false },
     { id: 4, name: 'Mínimos Cuadrados', color: 'from-orange-600 to-red-700', locked: false },
-    { id: 5, name: 'Integracion', color: 'from-yellow-500 to-orange-600', locked: false },
+    { id: 5, name: 'Integración', color: 'from-yellow-500 to-orange-600', locked: false },
     { id: 6, name: 'Ecuaciones diferenciales', color: 'from-yellow-600 to-amber-700', locked: false },
 ]
 
