@@ -144,6 +144,19 @@ export const InterpolacionNewtonAtrasModule = (props) => {
     }
   ]
 
+  // ✅ FUNCIÓN DE LIMITACIÓN DE 8 DECIMALES
+  const handleInputChange = (field, value) => {
+    // Limitar a 8 decimales
+    let processedValue = value
+    if (value.includes('.')) {
+      const [integer, decimal] = value.split('.')
+      if (decimal && decimal.length > 8) {
+        processedValue = `${integer}.${decimal.substring(0, 8)}`
+      }
+    }
+    setInputs(prev => ({ ...prev, [field]: processedValue }))
+  }
+
   // Generar problema aleatorio
   useEffect(() => {
     const selectedProblem = getRandomFrom(problemsPool)
@@ -222,10 +235,6 @@ export const InterpolacionNewtonAtrasModule = (props) => {
     setIsCompleted(false)
   }, [])
 
-  const handleInputChange = (field, value) => {
-    setInputs(prev => ({ ...prev, [field]: value }))
-  }
-
   const handleCutCable = (color) => {
     if (!isActive || !problem || isCompleted) return
 
@@ -249,14 +258,13 @@ export const InterpolacionNewtonAtrasModule = (props) => {
       return
     }
 
-    // Verificar g(x)
-    const gxCorrect = Math.abs(gxNum - problem.correctGx) < 0.01
-
-    // Verificar coeficientes binomiales
-    const s0Correct = Math.abs(s0Num - problem.coeffs[0]) < 0.01
-    const s1Correct = Math.abs(s1Num - problem.coeffs[1]) < 0.01
-    const s2Correct = Math.abs(s2Num - problem.coeffs[2]) < 0.01
-    const s3Correct = Math.abs(s3Num - problem.coeffs[3]) < 0.01
+    // ✅ VALIDACIÓN CON PRECISIÓN DE 8 DECIMALES
+    const tolerance = 0.00000001
+    const gxCorrect = Math.abs(gxNum - problem.correctGx) < tolerance
+    const s0Correct = Math.abs(s0Num - problem.coeffs[0]) < tolerance
+    const s1Correct = Math.abs(s1Num - problem.coeffs[1]) < tolerance
+    const s2Correct = Math.abs(s2Num - problem.coeffs[2]) < tolerance
+    const s3Correct = Math.abs(s3Num - problem.coeffs[3]) < tolerance
 
     // Determinar cable correcto según términos usados
     let correctCable = ''
@@ -271,10 +279,13 @@ export const InterpolacionNewtonAtrasModule = (props) => {
     if (allCorrect && cableCorrect) {
       setResultMessage('✅ ¡Correcto! Módulo completado')
       setIsCompleted(true)
+      props.onComplete?.()
     } else if (!allCorrect) {
       setResultMessage('❌ Error en los cálculos')
+      props.onError?.()
     } else {
       setResultMessage('❌ Cable incorrecto')
+      props.onError?.()
     }
   }
 
@@ -337,11 +348,11 @@ export const InterpolacionNewtonAtrasModule = (props) => {
               <label className="block text-xs text-purple-300 mb-2 font-semibold">g(x) final:</label>
               <input
                 type="number"
-                step="any"
+                // step="any" // ❌ REMOVIDO para consistencia
                 disabled={!isActive || isCompleted}
                 className="w-full rounded border border-white/20 bg-black/40 px-3 py-2 text-sm text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 font-mono"
                 value={inputs.gx}
-                onChange={(e) => handleInputChange('gx', e.target.value)}
+                onChange={(e) => handleInputChange('gx', e.target.value)} // ✅ CON LIMITACIÓN
                 placeholder="0.00000000"
               />
             </div>
@@ -350,11 +361,11 @@ export const InterpolacionNewtonAtrasModule = (props) => {
               <label className="block text-xs text-blue-300 mb-2 font-semibold">C(s,0):</label>
               <input
                 type="number"
-                step="any"
+                // step="any" // ❌ REMOVIDO para consistencia
                 disabled={!isActive || isCompleted}
                 className="w-full rounded border border-white/20 bg-black/40 px-3 py-2 text-sm text-white text-center outline-none focus:border-blue-400 disabled:bg-black/20 font-mono"
                 value={inputs.s0}
-                onChange={(e) => handleInputChange('s0', e.target.value)}
+                onChange={(e) => handleInputChange('s0', e.target.value)} // ✅ CON LIMITACIÓN
                 placeholder="0.00000000"
               />
             </div>
@@ -363,11 +374,11 @@ export const InterpolacionNewtonAtrasModule = (props) => {
               <label className="block text-xs text-blue-300 mb-2 font-semibold">C(s,1):</label>
               <input
                 type="number"
-                step="any"
+                // step="any" // ❌ REMOVIDO para consistencia
                 disabled={!isActive || isCompleted}
                 className="w-full rounded border border-white/20 bg-black/40 px-3 py-2 text-sm text-white text-center outline-none focus:border-blue-400 disabled:bg-black/20 font-mono"
                 value={inputs.s1}
-                onChange={(e) => handleInputChange('s1', e.target.value)}
+                onChange={(e) => handleInputChange('s1', e.target.value)} // ✅ CON LIMITACIÓN
                 placeholder="0.00000000"
               />
             </div>
@@ -376,11 +387,11 @@ export const InterpolacionNewtonAtrasModule = (props) => {
               <label className="block text-xs text-blue-300 mb-2 font-semibold">C(s,2):</label>
               <input
                 type="number"
-                step="any"
+                // step="any" // ❌ REMOVIDO para consistencia
                 disabled={!isActive || isCompleted}
                 className="w-full rounded border border-white/20 bg-black/40 px-3 py-2 text-sm text-white text-center outline-none focus:border-blue-400 disabled:bg-black/20 font-mono"
                 value={inputs.s2}
-                onChange={(e) => handleInputChange('s2', e.target.value)}
+                onChange={(e) => handleInputChange('s2', e.target.value)} // ✅ CON LIMITACIÓN
                 placeholder="0.00000000"
               />
             </div>
@@ -389,11 +400,11 @@ export const InterpolacionNewtonAtrasModule = (props) => {
               <label className="block text-xs text-blue-300 mb-2 font-semibold">C(s,3):</label>
               <input
                 type="number"
-                step="any"
+                // step="any" // ❌ REMOVIDO para consistencia
                 disabled={!isActive || isCompleted}
                 className="w-full rounded border border-white/20 bg-black/40 px-3 py-2 text-sm text-white text-center outline-none focus:border-blue-400 disabled:bg-black/20 font-mono"
                 value={inputs.s3}
-                onChange={(e) => handleInputChange('s3', e.target.value)}
+                onChange={(e) => handleInputChange('s3', e.target.value)} // ✅ CON LIMITACIÓN
                 placeholder="0.00000000"
               />
             </div>

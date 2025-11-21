@@ -42,9 +42,9 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
           <>
             {/* Cable cortado */}
             <div className="absolute inset-0 flex flex-col items-center justify-between py-2">
-              <div className={`w-4 h-30 ${colorMap[color]} rounded-t-full opacity-80`} />
+              <div className={`w-4 h-28 ${colorMap[color]} rounded-t-full opacity-80`} />
               <div className="text-lg animate-pulse">⚡</div>
-              <div className={`w-4 h-30 ${colorMap[color]} rounded-b-full opacity-80`} />
+              <div className={`w-4 h-28 ${colorMap[color]} rounded-b-full opacity-80`} />
             </div>
           </>
         )}
@@ -133,6 +133,21 @@ export const InterpolacionLagrangeModule = (props) => {
     setIsCompleted(false)
   }, [])
 
+  // ✅ FUNCIÓN DE LIMITACIÓN DE 8 DECIMALES (igual que Newton y Lineal)
+  const handleFinalResultChange = (e) => {
+    const value = e.target.value
+    
+    // Limitar a 8 decimales
+    if (value.includes('.')) {
+      const [integer, decimal] = value.split('.')
+      if (decimal && decimal.length > 8) {
+        setFinalResult(`${integer}.${decimal.substring(0, 8)}`)
+        return
+      }
+    }
+    setFinalResult(value)
+  }
+
   const handleCutCable = (color) => {
     if (!isActive || !problem || isCompleted) return
 
@@ -151,15 +166,19 @@ export const InterpolacionLagrangeModule = (props) => {
 
     setCutCable(color)
     
-    const finalCorrect = Math.abs(finalResultNum - problem.correctGx) < 0.01
+    // ✅ PRECISIÓN DE 8 DECIMALES - Margen de 0.00000001
+    const finalCorrect = Math.abs(finalResultNum - problem.correctGx) < 0.00000001
     const signCorrect = (finalResultNum > 0 && color === 'blue') || 
                        (finalResultNum < 0 && color === 'green')
 
     if (finalCorrect && signCorrect) {
       setResultMessage('✅ ¡Correcto! Módulo terminado')
       setIsCompleted(true)
+      props.onComplete?.()
     } else {
       setResultMessage('❌ Error en el cálculo')
+      // El Game Over es manejado externamente por el sistema del juego
+      props.onError?.() 
     }
   }
 
@@ -183,7 +202,7 @@ export const InterpolacionLagrangeModule = (props) => {
       {...props}
       topic="Interpolacion"
       title="Interpolacion de Lagrange"
-      description="Resuelve el problema"
+      description="Resuelve con precisión de 8 decimales"
     >
       <div className="flex gap-8">
         {/* Panel izquierdo: Problema y entrada */}
@@ -218,19 +237,19 @@ export const InterpolacionLagrangeModule = (props) => {
             </div>
           </div>
 
-          {/* Input final */}
+          {/* Input final con limitación de 8 decimales */}
           <div className={`rounded-lg border border-purple-500/50 bg-purple-500/5 p-4 mb-6 ${disabledClass}`}>
             <label className="block text-sm text-purple-300 mb-3 text-center font-bold">
               RESULTADO g({problem.targetX})
             </label>
             <input
               type="number"
-              step="any"
+              // step="0.00000001" // ❌ REMOVIDO para consistencia
               disabled={!isActive || isCompleted}
               className="w-full rounded-lg border border-white/20 bg-black/40 px-4 py-3 text-lg text-white text-center outline-none focus:border-purple-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
               value={finalResult}
-              onChange={(e) => setFinalResult(e.target.value)}
-              placeholder="0.000000"
+              onChange={handleFinalResultChange} // ✅ USAR función con limitación
+              placeholder="0.00000000"
             />
           </div>
 

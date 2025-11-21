@@ -166,6 +166,7 @@ export const NoLinealesMetodoGraficoModule = (props) => {
   const [resultMessage, setResultMessage] = useState('')
   const [showSolution, setShowSolution] = useState(false)
   const [isCompleted, setIsCompleted] = useState(false)
+  const [attempts, setAttempts] = useState(0)
   const isActive = props.isActive !== false
 
   // Pool de problemas predefinidos
@@ -181,6 +182,12 @@ export const NoLinealesMetodoGraficoModule = (props) => {
       calculateY: (x) => Math.pow(x, 2) - 4,
       xValues: [-3, -2, -1, 0, 1, 2, 3],
       correctRoots: [-2, 2]
+    },
+    {
+      function: 'f(x) = x³ - 2x - 5',
+      calculateY: (x) => Math.pow(x, 3) - 2 * x - 5,
+      xValues: [-2, -1, 0, 1, 2, 3],
+      correctRoots: [2.1]
     }
   ]
 
@@ -188,7 +195,7 @@ export const NoLinealesMetodoGraficoModule = (props) => {
   useEffect(() => {
     const selectedProblem = getRandomFrom(problemsPool)
     const correctYValues = selectedProblem.xValues.map(x => 
-      parseFloat(selectedProblem.calculateY(x).toFixed(2))
+      parseFloat(selectedProblem.calculateY(x).toFixed(8))
     )
     
     setProblem({
@@ -202,14 +209,24 @@ export const NoLinealesMetodoGraficoModule = (props) => {
     setResultMessage('')
     setShowSolution(false)
     setIsCompleted(false)
+    setAttempts(0)
   }, [])
 
   const handleYChange = (index, value) => {
     if (!isActive || isCompleted) return
     
+    // Limitar a 8 decimales
+    let processedValue = value
+    if (value.includes('.')) {
+      const [integer, decimal] = value.split('.')
+      if (decimal && decimal.length > 8) {
+        processedValue = `${integer}.${decimal.substring(0, 8)}`
+      }
+    }
+    
     const newYValues = [...yValues]
     // Permitir decimales y manejar entrada vacía
-    newYValues[index] = value === '' ? null : parseFloat(value)
+    newYValues[index] = processedValue === '' ? null : parseFloat(processedValue)
     setYValues(newYValues)
   }
 
@@ -218,9 +235,9 @@ export const NoLinealesMetodoGraficoModule = (props) => {
     
     const rootX = parseFloat(root.x.toFixed(1))
     
-    // Verificar si esta raíz es correcta
+    // Verificar si esta raíz es correcta con tolerancia más estricta
     const isCorrectRoot = problem.correctRoots.some(correctRoot => 
-      Math.abs(rootX - correctRoot) < 0.5
+      Math.abs(rootX - correctRoot) < 0.1 // ✅ Tolerancia más precisa
     )
     
     if (isCorrectRoot && !foundRoots.includes(rootX)) {
@@ -239,17 +256,17 @@ export const NoLinealesMetodoGraficoModule = (props) => {
     const allYFilled = currentYValues.every(y => y !== null)
     if (!allYFilled) return
 
-    // Verificar que todos los valores Y sean correctos (margen más amplio)
+    // Verificar que todos los valores Y sean correctos con tolerancia de 8 decimales
     const yValuesCorrect = currentYValues.every((y, index) => {
       if (y === null) return false
       const correctY = problem.correctYValues[index]
-      // Margen de error más amplio para decimales
-      return Math.abs(y - correctY) < 0.15
+      // ✅ Margen de error más estricto para 8 decimales
+      return Math.abs(y - correctY) < 0.00000001
     })
 
-    // Verificar que se encontraron todas las raíces correctas
+    // Verificar que se encontraron todas las raíces correctas con tolerancia más estricta
     const allRootsFound = problem.correctRoots.every(correctRoot =>
-      currentFoundRoots.some(foundRoot => Math.abs(foundRoot - correctRoot) < 0.5)
+      currentFoundRoots.some(foundRoot => Math.abs(foundRoot - correctRoot) < 0.1) // ✅ Más precisa
     )
 
     if (yValuesCorrect && allRootsFound) {
@@ -258,8 +275,17 @@ export const NoLinealesMetodoGraficoModule = (props) => {
       // No llamar automáticamente a onComplete, dejar que el usuario cierre manualmente
     } else if (allYFilled && currentFoundRoots.length >= problem.correctRoots.length) {
       // Solo mostrar error si ya completó todo y hay errores
-      setResultMessage('❌ Revisa tus cálculos')
-      setShowSolution(true)
+      const newAttempts = attempts + 1
+      setAttempts(newAttempts)
+      
+      if (newAttempts >= 2) {
+        setResultMessage('❌ Game Over - Se han agotado los intentos')
+        props.onError?.() // ✅ Llamar a Game Over externo
+        setShowSolution(true)
+      } else {
+        setResultMessage('❌ Revisa tus cálculos')
+        setShowSolution(true)
+      }
     }
   }
 
@@ -311,7 +337,7 @@ export const NoLinealesMetodoGraficoModule = (props) => {
                   <div className="px-4 py-2 text-center">
                     <input
                       type="number"
-                      step="0.01"
+                      step="any" // ✅ Permitir cualquier valor decimal
                       disabled={!isActive || isCompleted}
                       className="w-24 rounded border border-white/20 bg-black/40 px-2 py-1 text-sm text-white text-center outline-none focus:border-blue-400 disabled:bg-black/20 disabled:text-white/50 font-mono"
                       value={yValues[index] ?? ''}
@@ -342,6 +368,8 @@ export const NoLinealesMetodoGraficoModule = (props) => {
               className={`p-4 text-center text-sm font-bold rounded-lg ${
                 resultMessage.includes('✅')
                   ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+                  : resultMessage.includes('Game Over')
+                  ? 'bg-red-600/40 border border-red-500/60 text-red-200'
                   : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
               }`}
             >
@@ -382,8 +410,11 @@ export const NoLinealesMetodoGraficoModule = (props) => {
           <div className="text-sm text-center text-emerald-300 mb-3 font-bold">
             SOLUCIÓN CORRECTA
           </div>
+          <div className="text-center text-emerald-200 text-sm mb-2">
+            Valores Y correctos: {problem.correctYValues.join(', ')}
+          </div>
           <div className="text-center text-emerald-200 text-sm">
-            Revisa tus cálculos en el manual y vuelve a intentarlo
+            Raíces correctas: {problem.correctRoots.join(', ')}
           </div>
         </div>
       )}
