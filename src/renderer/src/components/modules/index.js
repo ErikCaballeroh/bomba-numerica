@@ -27,7 +27,6 @@ import { IntegracionSimpsonUnTercioModule } from './integracion/IntegracionSimps
 import { IntegracionSimpsonTresOctavosModule } from './integracion/IntegracionSimpsonTresOctavosModule'
 import { IntegracionNewtonCotesCerradasModule } from './integracion/IntegracionNewtonCotesCerradasModule'
 import { IntegracionReglaTrapezoidalModule } from './integracion/IntegracionReglaTrapezoidalModule'
-import { IntegracionNewtonCotesCerradasAbiertasModule } from './integracion/IntegracionNewtonCotesCerradasAbiertasModule'
 
 import { EdoEulerModificadoModule } from './ecuacionesDiferencialesOrdinarias/EdoEulerModificadoModule'
 import { EdoRungeKuttaSegundoOrdenModule } from './ecuacionesDiferencialesOrdinarias/EdoRungeKuttaSegundoOrdenModule'
@@ -65,7 +64,6 @@ export const MODULE_COMPONENTS = {
   INTEGRACION_SIMPSON_TRES_OCTAVOS: IntegracionSimpsonTresOctavosModule,
   INTEGRACION_NEWTON_COTES_CERRADAS: IntegracionNewtonCotesCerradasModule,
   INTEGRACION_REGLA_TRAPEZOIDAL: IntegracionReglaTrapezoidalModule,
-  INTEGRACION_NEWTON_COTES_CERRADAS_ABIERTAS: IntegracionNewtonCotesCerradasAbiertasModule,
 
   EDO_EULER_MODIFICADO: EdoEulerModificadoModule,
   EDO_RUNGE_KUTTA_SEGUNDO_ORDEN: EdoRungeKuttaSegundoOrdenModule,
@@ -128,10 +126,6 @@ export const MODULE_TOPICS = [
       { id: 'INTEGRACION_SIMPSON_TRES_OCTAVOS', title: 'Regla 3/8 Simpson' },
       { id: 'INTEGRACION_NEWTON_COTES_CERRADAS', title: 'Newton-Cotes cerradas' },
       { id: 'INTEGRACION_REGLA_TRAPEZOIDAL', title: 'Regla trapezoidal' },
-      {
-        id: 'INTEGRACION_NEWTON_COTES_CERRADAS_ABIERTAS',
-        title: 'Newton-Cotes cerradas y abiertas'
-      }
     ]
   },
   {
