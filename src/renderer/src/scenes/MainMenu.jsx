@@ -41,7 +41,7 @@ export default function MainMenu() {
                 {/* Contenedor principal */}
                 <div className="w-full max-w-lg bg-neutral-900/80 backdrop-blur-sm border border-neutral-600 rounded-xl p-10 shadow-2xl flex flex-col gap-10 mx-4">
                     <Button onClick={goLevels}>Jugar</Button>
-                    <Button>Ajustes</Button>
+                    <Button>Creditos</Button>
                     <Button onClick={handleExit}>Salir</Button>
                 </div>
             </div>
