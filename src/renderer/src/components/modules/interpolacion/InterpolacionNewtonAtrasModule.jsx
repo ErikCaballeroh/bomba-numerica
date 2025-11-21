@@ -307,7 +307,7 @@ export const InterpolacionNewtonAtrasModule = (props) => {
   return (
     <ModuleScaffold
       {...props}
-      topic="Interpolacion"
+      topic="Interpolación"
       title="Newton hacia atrás"
       description="Resuelve usando el método de diferencias hacia atrás"
     >

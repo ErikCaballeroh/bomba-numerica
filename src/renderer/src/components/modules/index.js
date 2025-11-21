@@ -32,7 +32,8 @@ import { IntegracionReglaTrapezoidalModule } from './integracion/IntegracionRegl
 import { EdoEulerModificadoModule } from './ecuacionesDiferencialesOrdinarias/EdoEulerModificadoModule'
 import { EdoRungeKuttaSegundoOrdenModule } from './ecuacionesDiferencialesOrdinarias/EdoRungeKuttaSegundoOrdenModule'
 import { EdoRungeKuttaTercerOrdenModule } from './ecuacionesDiferencialesOrdinarias/EdoRungeKuttaTercerOrdenModule'
-import { EdoRungeKuttaCuartoOrdenModule } from './ecuacionesDiferencialesOrdinarias/EdoRungeKuttaCuartoOrdenModule'
+import { EdoRungeKuttaCuartoOrdenUnTercioModule } from './ecuacionesDiferencialesOrdinarias/EdoRungeKuttaCuartoOrdenUnTercioModule'
+import { EdoRungeKuttaCuartoOrdenTresOctavosModule } from './ecuacionesDiferencialesOrdinarias/EdoRungeKuttaCuartoOrdenTresOctavos'
 import { EdoRungeKuttaOrdenSuperiorModule } from './ecuacionesDiferencialesOrdinarias/EdoRungeKuttaOrdenSuperiorModule'
 
 export const MODULE_COMPONENTS = {
@@ -70,7 +71,8 @@ export const MODULE_COMPONENTS = {
   EDO_EULER_MODIFICADO: EdoEulerModificadoModule,
   EDO_RUNGE_KUTTA_SEGUNDO_ORDEN: EdoRungeKuttaSegundoOrdenModule,
   EDO_RUNGE_KUTTA_TERCER_ORDEN: EdoRungeKuttaTercerOrdenModule,
-  EDO_RUNGE_KUTTA_CUARTO_ORDEN: EdoRungeKuttaCuartoOrdenModule,
+  EDO_RUNGE_KUTTA_CUARTO_ORDEN_UN_TERCIO: EdoRungeKuttaCuartoOrdenUnTercioModule,
+  EDO_RUNGE_KUTTA_CUARTO_ORDEN_TRES_OCTAVOS: EdoRungeKuttaCuartoOrdenTresOctavosModule,
   EDO_RUNGE_KUTTA_ORDEN_SUPERIOR: EdoRungeKuttaOrdenSuperiorModule
 }
 

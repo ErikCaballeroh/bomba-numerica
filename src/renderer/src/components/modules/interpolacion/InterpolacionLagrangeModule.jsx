@@ -205,8 +205,8 @@ export const InterpolacionLagrangeModule = (props) => {
   return (
     <ModuleScaffold
       {...props}
-      topic="Interpolacion"
-      title="Interpolacion de Lagrange"
+      topic="Interpolación"
+      title="Lagrange"
       description="Resuelve con precisión de 8 decimales"
     >
       <div className="flex gap-8">
