@@ -13,7 +13,7 @@ const CableVisual = ({ color, isCut, onClick, disabled }) => {
   const colorMap = {
     blue: 'bg-blue-500',
     green: 'bg-green-500',
-    red: 'bg-red-500', 
+    red: 'bg-red-500',
     yellow: 'bg-yellow-500'
   }
 
@@ -55,7 +55,7 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
   const [userInputs, setUserInputs] = useState({
     gx: '',
     s0: '',
-    s1: '', 
+    s1: '',
     s2: '',
     s3: ''
   })
@@ -90,33 +90,33 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
   useEffect(() => {
     const selectedProblem = getRandomFrom(problemsPool)
     const { xs, ys, targetX } = selectedProblem
-    
+
     // Calcular h
     const h = xs[1] - xs[0]
-    
+
     // Calcular diferencias
     const delta1 = [ys[1] - ys[0], ys[2] - ys[1], ys[3] - ys[2]]
     const delta2 = [delta1[1] - delta1[0], delta1[2] - delta1[1]]
     const delta3 = [delta2[1] - delta2[0]]
-    
+
     // Calcular s
     const s = (targetX - xs[0]) / h
-    
+
     // Calcular coeficientes binomiales
     const s0 = 1
     const s1 = s
     const s2 = (s * (s - 1)) / 2
     const s3 = (s * (s - 1) * (s - 2)) / 6
-    
+
     // Calcular g(x) y determinar términos necesarios
     let gx = ys[0] * s0
     let termsNeeded = 0
-    
+
     // Verificar qué términos son necesarios (no cero)
     const term1 = delta1[0] * s1
     const term2 = delta2[0] * s2
     const term3 = delta3[0] * s3
-    
+
     if (Math.abs(term1) > 0.00000001) {
       gx += term1
       termsNeeded = 1
@@ -129,7 +129,25 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
       gx += term3
       termsNeeded = 3
     }
-    
+
+    console.log('=== Newton hacia adelante ===')
+    console.log('Problema:', selectedProblem.description)
+    console.log('x:', xs)
+    console.log('y:', ys)
+    console.log('Target x:', targetX)
+    console.log('h:', h)
+    console.log('Δ¹:', delta1)
+    console.log('Δ²:', delta2)
+    console.log('Δ³:', delta3)
+    console.log('Coeficientes binomiales:')
+    console.log('  C(s,0):', s0)
+    console.log('  C(s,1):', s1)
+    console.log('  C(s,2):', s2)
+    console.log('  C(s,3):', s3)
+    console.log('g(x) correcto:', gx)
+    console.log('Términos necesarios:', termsNeeded)
+    console.log('Cable correcto:', ['blue', 'green', 'red', 'yellow'][termsNeeded])
+
     setProblem({
       xs, ys, targetX, h,
       deltas: { delta1, delta2, delta3 },
@@ -138,7 +156,7 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
       termsNeeded,
       correctCable: ['blue', 'green', 'red', 'yellow'][termsNeeded]
     })
-    
+
     setUserInputs({ gx: '', s0: '', s1: '', s2: '', s3: '' })
     setCutCable(null)
     setResultMessage('')
@@ -181,9 +199,9 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
     }
 
     setCutCable(color)
-    
+
     // ✅ PRECISIÓN DE 8 DECIMALES para todas las soluciones
-    const solutionsCorrect = 
+    const solutionsCorrect =
       Math.abs(values[0] - problem.correctGx) < 0.00000001 &&
       Math.abs(values[1] - problem.coefficients.s0) < 0.00000001 &&
       Math.abs(values[2] - problem.coefficients.s1) < 0.00000001 &&
@@ -235,7 +253,7 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
             <div className="text-sm text-center font-bold text-yellow-300 mb-4">
               Obtener g(x) para x = {problem.targetX.toFixed(4)}
             </div>
-            
+
             {/* Tabla de datos */}
             <div className="grid grid-cols-2 gap-4 mt-4">
               <div className="bg-black/30 rounded border border-white/20">
@@ -246,7 +264,7 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
                   </div>
                 ))}
               </div>
-              
+
               <div className="bg-black/30 rounded border border-white/20">
                 <div className="px-4 py-2 text-center font-bold border-b border-white/20">y</div>
                 {problem.ys.map((y, index) => (
@@ -263,7 +281,7 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
             <label className="block text-sm text-purple-300 mb-3 text-center font-bold">
               INGRESAR RESULTADOS
             </label>
-            
+
             <div className="space-y-4">
               {/* g(x) final */}
               <div>
@@ -305,11 +323,10 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
           {/* Mensaje de resultado */}
           {resultMessage && (
             <div
-              className={`p-4 text-center text-sm font-bold rounded-lg ${
-                resultMessage.includes('Correcto')
+              className={`p-4 text-center text-sm font-bold rounded-lg ${resultMessage.includes('Correcto')
                   ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
                   : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
-              }`}
+                }`}
             >
               {resultMessage}
               {isCompleted && (
@@ -332,7 +349,7 @@ export const InterpolacionNewtonAdelanteModule = (props) => {
           <div className="text-sm text-red-300 text-center mb-6 font-bold">
             SELECCIONAR CABLE
           </div>
-          
+
           <div className="flex-1 flex items-center justify-center">
             <div className="flex gap-8"> {/* Reducido gap para dar más espacio */}
               {['blue', 'green', 'red', 'yellow'].map((color) => (

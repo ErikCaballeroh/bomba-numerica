@@ -111,6 +111,22 @@ export const InterpolacionLinealModule = (props) => {
 
     const error = Math.abs(realFx - gx)
 
+    const errThirdDecimal = Math.floor((error * 1000) % 10)
+    let correctColor = ''
+    if (errThirdDecimal >= 0 && errThirdDecimal <= 3) correctColor = 'blue'
+    else if (errThirdDecimal >= 4 && errThirdDecimal <= 6) correctColor = 'green'
+    else if (errThirdDecimal >= 7 && errThirdDecimal <= 9) correctColor = 'red'
+
+    console.log('=== Interpolación Lineal ===')
+    console.log('Problema: Estimar ln(' + p.x + ') usando ln(' + p.a + ') y ln(' + p.b + ')')
+    console.log('ln(' + p.a + ') =', fA)
+    console.log('ln(' + p.b + ') =', fB)
+    console.log('ln(' + p.x + ') real =', realFx)
+    console.log('g(x) correcto =', gx)
+    console.log('Error =', error)
+    console.log('Tercer decimal del error =', errThirdDecimal)
+    console.log('Cable correcto =', correctColor)
+
     setProblem({
       ...p,
       fA,
@@ -119,7 +135,7 @@ export const InterpolacionLinealModule = (props) => {
       gx,
       error
     })
-    
+
     setGxInput('')
     setResultMessage('')
     setCutCable(null)
@@ -129,7 +145,7 @@ export const InterpolacionLinealModule = (props) => {
   // ✅ FUNCIÓN DE LIMITACIÓN DE 8 DECIMALES (igual que Newton)
   const handleGxInputChange = (e) => {
     const value = e.target.value
-    
+
     // Limitar a 8 decimales
     if (value.includes('.')) {
       const [integer, decimal] = value.split('.')
@@ -151,7 +167,7 @@ export const InterpolacionLinealModule = (props) => {
     }
 
     const gxInputNum = parseFloat(gxInput)
-    
+
     if (isNaN(gxInputNum)) {
       setResultMessage('❌ Ingresa un resultado válido')
       return
@@ -163,7 +179,7 @@ export const InterpolacionLinealModule = (props) => {
 
     // ✅ VALIDACIÓN CON PRECISIÓN DE 8 DECIMALES
     const isGxCorrect = Math.abs(gxInputNum - problem.gx) < 0.00000001
-    
+
     if (!isGxCorrect) {
       setResultMessage('❌ El valor de g(x) es incorrecto')
       props.onError?.()
@@ -270,7 +286,7 @@ export const InterpolacionLinealModule = (props) => {
               disabled={cablesDisabled}
             />
           </div>
-          
+
           {/* Mensaje si no hay resultado */}
           {!gxInput.trim() && (
             <div className="text-xs text-center text-red-300/70 mt-4">
@@ -283,11 +299,10 @@ export const InterpolacionLinealModule = (props) => {
       {/* Resultado */}
       {resultMessage && (
         <div
-          className={`p-3 text-center text-sm font-bold rounded-lg mb-6 ${
-            resultMessage.includes('Correcto')
-              ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
-              : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
-          }`}
+          className={`p-3 text-center text-sm font-bold rounded-lg mb-6 ${resultMessage.includes('Correcto')
+            ? 'bg-emerald-600/40 border border-emerald-500/60 text-emerald-200'
+            : 'bg-rose-600/40 border border-rose-500/60 text-rose-200'
+            }`}
         >
           {resultMessage}
           {isCompleted && (

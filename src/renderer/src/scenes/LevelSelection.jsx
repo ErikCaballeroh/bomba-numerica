@@ -91,7 +91,7 @@ export default function LevelSelection() {
                     transition={{ duration: 0.6 }}
                     className="text-5xl font-black text-white mb-20 text-center drop-shadow-lg"
                 >
-                    BOMBEA NÚMEROS
+                    NIVELES
                 </motion.h1>
 
                 {/* Carousel Container */}
@@ -109,8 +109,8 @@ export default function LevelSelection() {
                                         animate="center"
                                         exit="exit"
                                         transition={{
-                                            x: { type: 'spring', stiffness: 300, damping: 30 },
-                                            opacity: { duration: 0.2 },
+                                            x: { type: 'spring', stiffness: 600, damping: 40 },
+                                            opacity: { duration: 0.15 },
                                         }}
                                         className="absolute w-full h-full"
                                     >
