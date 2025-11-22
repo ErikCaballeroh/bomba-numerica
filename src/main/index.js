@@ -13,7 +13,7 @@ function createWindow() {
     show: false,
     autoHideMenuBar: true,
     title: 'Bomba Numerica',
-    ...(process.platform === 'linux' ? { icon } : {}),
+    icon: icon,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -74,13 +74,13 @@ function getMimeType(filename) {
 // Handler para leer un solo archivo
 ipcMain.handle('read-model-file', async (_event, filename) => {
   try {
-    const basePath = is.dev 
+    const basePath = is.dev
       ? join(__dirname, '../../resources/models')
       : join(process.resourcesPath, 'models')
-    
+
     const filePath = join(basePath, filename)
     const buffer = await readFile(filePath)
-    
+
     return {
       success: true,
       data: Array.from(buffer),
@@ -99,10 +99,10 @@ ipcMain.handle('read-model-file', async (_event, filename) => {
 // Handler para listar todos los archivos en la carpeta de modelos
 ipcMain.handle('list-model-files', async () => {
   try {
-    const basePath = is.dev 
+    const basePath = is.dev
       ? join(__dirname, '../../resources/models')
       : join(process.resourcesPath, 'models')
-    
+
     const files = await readdir(basePath)
     return {
       success: true,
@@ -120,14 +120,14 @@ ipcMain.handle('list-model-files', async () => {
 // Handler para cargar todos los archivos relacionados con un modelo
 ipcMain.handle('load-model-with-assets', async (_event, modelName) => {
   try {
-    const basePath = is.dev 
+    const basePath = is.dev
       ? join(__dirname, '../../resources/models')
       : join(process.resourcesPath, 'models')
-    
+
     // Leer todos los archivos en la carpeta
     const allFiles = await readdir(basePath)
     const filesData = {}
-    
+
     // Cargar todos los archivos
     for (const file of allFiles) {
       const filePath = join(basePath, file)
@@ -137,7 +137,7 @@ ipcMain.handle('load-model-with-assets', async (_event, modelName) => {
         mimeType: getMimeType(file)
       }
     }
-    
+
     return {
       success: true,
       files: filesData
@@ -168,7 +168,7 @@ app.whenReady().then(() => {
 
   ipcMain.on('open-pdf-window', () => {
     console.log('Handler open-pdf-window llamado')
-    
+
     const pdfWindow = new BrowserWindow({
       width: 1000,
       height: 700,

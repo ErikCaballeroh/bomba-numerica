@@ -4,6 +4,7 @@ import { LoadingScreen } from './scenes/LoadingScreen'
 import MainMenu from './scenes/MainMenu'
 import LevelSelection from './scenes/LevelSelection'
 import { BombScene } from './scenes/BombScene'
+import Credits from './scenes/Credits'
 
 function App() {
     return (
@@ -13,6 +14,7 @@ function App() {
                 <Route path={ROUTES.HOME} element={<MainMenu />} />
                 <Route path={ROUTES.LEVELS} element={<LevelSelection />} />
                 <Route path={ROUTES.GAME} element={<BombScene />} />
+                <Route path={ROUTES.CREDITS} element={<Credits />} />
             </Routes>
         </div>
     )

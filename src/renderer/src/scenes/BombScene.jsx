@@ -95,6 +95,15 @@ export const BombScene = () => {
 
     const [timeLeft, setTimeLeft] = useState(levelConfig.totalTime)
     const [isTimerActive, setIsTimerActive] = useState(true)
+    const [showManualNotification, setShowManualNotification] = useState(true)
+
+    // Ocultar notificación del manual después de 8 segundos
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowManualNotification(false)
+        }, 8000)
+        return () => clearTimeout(timer)
+    }, [])
 
     // Sincronizar estados cuando cambia el levelConfig (cambio de nivel)
     useEffect(() => {
@@ -107,6 +116,7 @@ export const BombScene = () => {
         setLossReason(null)
         setCompletionTime(null)
         setIsTimerActive(true)
+        setShowManualNotification(true)
     }, [levelConfig])
 
     const completedModules = Object.values(miniGamesStatus).filter(Boolean).length
@@ -222,9 +232,21 @@ export const BombScene = () => {
                 onCancel={cancelExit}
             />
 
+            {/* Notificación del manual */}
+            {showManualNotification && (
+                <div className="absolute top-24 left-1/2 -translate-x-1/2 z-40 animate-pulse">
+                    <div className="rounded-xl border border-blue-400/30 bg-blue-950/90 backdrop-blur-sm px-6 py-3 shadow-2xl">
+                        <p className="text-sm text-blue-100 flex items-center gap-2">
+                            <span className="text-xl">📖</span>
+                            <span>Usa el botón de <span className="font-bold text-blue-200">Manual de Desactivación</span> para ayudarte</span>
+                        </p>
+                    </div>
+                </div>
+            )}
+
             {totalModules > 0 && (
                 <div className="pointer-events-none absolute top-6 right-6 z-30 rounded-xl border border-white/10 bg-black/50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-white/70">
-                    {completedModules}/{totalModules} modulos completados
+                    {completedModules}/{totalModules} módulos completados
                 </div>
             )}
             {/* Contenedor de modulos */}
@@ -233,10 +255,10 @@ export const BombScene = () => {
                     <div className="w-full max-w-5xl max-h-screen overflow-y-scroll rounded-2xl border border-white/10 bg-[#1a0f0aa1] p-6 text-white shadow-2xl">
                         {moduleErrors[activeMiniGame] ? (
                             <p className="mb-4 text-sm text-rose-200/90">
-                                Errores registrados en este modulo: {moduleErrors[activeMiniGame]}
+                                Errores registrados en este módulo: {moduleErrors[activeMiniGame]}
                             </p>
                         ) : (
-                            <p className="mb-4 text-xs uppercase tracking-[0.3em] text-white/50">Modulo activo</p>
+                            <p className="mb-4 text-xs uppercase tracking-[0.3em] text-white/50">Módulo activo</p>
                         )}
                         {(() => {
                             const ActiveModule = MODULE_COMPONENTS[activeMiniGame]
